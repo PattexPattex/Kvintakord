@@ -15,6 +15,7 @@ import tornadofx.onChange
 import tornadofx.runLater
 import java.awt.CheckboxMenuItem
 import java.awt.Menu
+import java.awt.SystemTray
 
 class TrayIconManager : Controller() {
     private val player by lazy { find<PlayerManager>() }
@@ -40,6 +41,10 @@ class TrayIconManager : Controller() {
     }
 
     fun create() {
+        if (!SystemTray.isSupported()) {
+            return log.warning("SystemTray is not supported")
+        }
+
         Platform.setImplicitExit(false)
         primaryStage.setOnCloseRequest {
             primaryStage.hide()
