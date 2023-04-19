@@ -57,6 +57,37 @@ application {
     mainClass.set(appMainClass)
 }
 
+tasks.distTar {
+    val path = archivePath
+    archiveVersion.set("")
+
+    doLast {
+        archivePath.renameTo(path)
+    }
+}
+
+tasks.distZip {
+    val path = archivePath
+    archiveVersion.set("")
+
+    doLast {
+        archivePath.renameTo(path)
+    }
+}
+
+distributions.main {
+    contents {
+        from("assets/icons/icon.png")
+        from("assets/icons/icon.ico")
+        from("LICENSE")
+    }
+}
+
+tasks.withType<CreateStartScripts> {
+    (unixStartScriptGenerator as TemplateBasedScriptGenerator).template = resources.text.fromFile("assets/scripts/unixStartScript.txt")
+    (windowsStartScriptGenerator as TemplateBasedScriptGenerator).template = resources.text.fromFile("assets/scripts/windowsStartScript.txt")
+}
+
 tasks.jar {
     manifest {
         attributes(
