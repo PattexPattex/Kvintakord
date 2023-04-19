@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -30,6 +29,7 @@ dependencies {
     implementation("com.adamratzman:spotify-api-kotlin-core:4.0.0")
     implementation("com.vdurmont:emoji-java:5.1.1")
     implementation("com.dustinredmond.fxtrayicon:FXTrayIcon:4.0.1")
+    implementation("org.slf4j:jul-to-slf4j:2.0.7")
     runtimeOnly("ch.qos.logback:logback-classic:1.4.6")
     runtimeOnly("org.fusesource.jansi:jansi:1.17")
 
@@ -68,24 +68,10 @@ tasks.jar {
     }
 }
 
-tasks.withType<ShadowJar> {
-    //archiveFileName.set("${project.name}-${project.version}-all.jar")
-}
-
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "17"
 }
 
 tasks.withType<JavaCompile> {
     targetCompatibility = "17"
-}
-
-publishing.publications {
-    create<MavenPublication>("maven") {
-        groupId = project.group as String
-        artifactId = project.name
-        version = project.version as String
-
-        from(components["java"])
-    }
 }
