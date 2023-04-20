@@ -15,31 +15,40 @@ Some of its features include:
 - Low memory footprint
 
 Kvintakord is written in pure Kotlin, using the [TornadoFX](https://tornadofx.io) framework for the GUI and [Lavaplayer](https://github.com/Walkyst/lavaplayer-fork) for the audio.
+This project is a successor of [MusicGods](https://github.com/PattexPattex/MusicGods), a Discord music bot, created and maintained by me.
 
 <h2>Table of contents</h2>
 
 <!-- TOC -->
   * [Using Kvintakord](#using-kvintakord)
     * [Launching from desktop](#launching-from-desktop)
+    * [Spotify on Kvintakord](#spotify-on-kvintakord)
   * [Submitting an issue](#submitting-an-issue)
   * [Editing, building and contributing](#editing-building-and-contributing)
 <!-- TOC -->
 
 ## Using Kvintakord
 
-Please use Java 17 or higher. Download the latest release from the [releases page](https://github.com/PattexPattex/Kvintakord/releases).
+Please use Java 17 or higher. I recommend [Eclipse Temurin](https://adoptium.net/temurin/releases/). Download the latest release from the [releases page](https://github.com/PattexPattex/Kvintakord/releases).
 It is recommended to download the .zip file, as it is the most straightforward way to run Kvintakord. Extract its contents to a safe place.
 
 <details>
     <summary>Windows</summary>
     
 Simply double-click the `Kvintakord.bat` file in the `bin` directory.
+You could also start it in the terminal.
 </details>
 
 <details>
     <summary>Linux</summary>
 
-Open the `bin` directory in the terminal and simply execute `./Kvintakord`.
+Open the `bin` directory in the terminal and execute `./Kvintakord`.
+</details>
+
+<details>
+    <summary>Mac</summary>
+
+*`¯\_(ツ)_/¯`*
 </details>
 
 ### Launching from desktop
@@ -75,6 +84,18 @@ Icon=APP_HOME/icon.png
 4. Right-click on the file and click the `Allow Launching` option. If the option doesn't appear, you probably didn't replace `APP_HOME` correctly.
 5. You're all set!
 </details>
+
+<details>
+    <summary>Mac</summary>
+
+*`¯\_(ツ)_/¯`*
+</details>
+
+### Spotify on Kvintakord
+
+Kvintakord supports Spotify as an audio source. To enable it, go to the `Search` tab an open a dialogue with the `Update Spotify credentials` button. 
+Note that you don't need to enter your username and password, but an ID and the secret of a Spotify application. A guide on how to create one can be found [here](https://developer.spotify.com/documentation/web-api/concepts/apps).
+_The credentials are stored in a file, so, that's that._
 
 ## Submitting an issue
 
