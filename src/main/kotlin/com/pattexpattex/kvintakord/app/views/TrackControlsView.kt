@@ -225,8 +225,15 @@ class TrackControlsView : View("TrackControls") {
                     min = .0
 
                     maxProperty().bind(player.musicManager.currentTrack.doubleBinding {
-                        it?.duration?.toDouble() ?: .0
+                        when (it?.duration) {
+                            Long.MAX_VALUE -> -1.0
+                            else -> it?.duration?.toDouble() ?: .0
+                        }
                     })
+
+                    disableWhen {
+                        player.musicManager.currentTrack.booleanBinding { it == null || it.duration == Long.MAX_VALUE }
+                    }
 
                     valueProperty().bindBidirectional(position as Property<Number>)
                 }
