@@ -91,7 +91,7 @@ class TrackControlsView : View("TrackControls") {
                     })
 
                     action {
-                        player.musicManager.currentTrack.value?.info?.uri?.let { openUrl(it) }
+                        player.musicManager.currentTrack.value?.metadata?.uri?.let { openUrl(it) }
                     }
 
                     ContextMenuBuilder.hyperlink(this, player.musicManager.currentTrack.stringBinding { it?.metadata?.uri })
