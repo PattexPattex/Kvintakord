@@ -86,7 +86,13 @@ class AudioDispatcher(
         val lineInfo = Line.Info(SourceDataLine::class.java)
 
         return AudioSystem.getMixerInfo()
-            .map(AudioSystem::getMixer)
+            .mapNotNull {
+                try {
+                    AudioSystem.getMixer(it)
+                } catch (ignored: IllegalArgumentException) {
+                    null
+                }
+            }
             .filter { it.isLineSupported(lineInfo) }
     }
 
