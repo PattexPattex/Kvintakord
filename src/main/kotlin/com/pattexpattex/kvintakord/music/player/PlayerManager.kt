@@ -1,13 +1,11 @@
 package com.pattexpattex.kvintakord.music.player
 
-import com.pattexpattex.kvintakord.app.ObjectPropertyWrapper
-import com.pattexpattex.kvintakord.app.views.DefaultView
+import com.pattexpattex.kvintakord.music.adapter.AudioPlayerAdapter
 import com.pattexpattex.kvintakord.music.audio.AudioDispatcher
-import com.pattexpattex.kvintakord.music.spotify.SpotifyAudioSourceManager
 import com.pattexpattex.kvintakord.music.spotify.SpotifyApiManager
+import com.pattexpattex.kvintakord.music.spotify.SpotifyAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.format.AudioPlayerInputStream
 import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
@@ -61,8 +59,8 @@ class PlayerManager : Controller() {
         }
     }
 
-    fun search(query: String, source: String? = null): CompletableFuture<Pair<String, List<AudioTrack>>> {
-        val future = CompletableFuture<Pair<String, List<AudioTrack>>>()
+    /*fun search(query: String, source: String? = null): CompletableFuture<Pair<String, List<AudioTrackAdapter>>> {
+        val future = CompletableFuture<Pair<String, List<AudioTrackAdapter>>>()
         val formattedQuery = formatQuery(query, source)
 
         if (formattedQuery.isEmpty()) {
@@ -70,13 +68,13 @@ class PlayerManager : Controller() {
             return future
         }
 
-        manager.loadItem(formattedQuery, object : AudioLoadResultHandler {
+        audioPlayerManager.loadItem(formattedQuery, object : AudioLoadResultHandler {
             override fun trackLoaded(track: AudioTrack) {
-                future.complete(query to listOf(TrackMetadata.buildFor(track)))
+                future.complete(query to listOf(AudioTrackAdapter.wrap(TrackMetadata.buildFor(track))!!))
             }
 
             override fun playlistLoaded(playlist: AudioPlaylist) {
-                future.complete(playlist.name to playlist.tracks.map(TrackMetadata::buildFor))
+                future.complete(playlist.name to playlist.tracks.map(TrackMetadata::buildFor).mapNotNull(AudioTrackAdapter::wrap))
             }
 
             override fun noMatches() {
@@ -89,9 +87,7 @@ class PlayerManager : Controller() {
         })
 
         return future
-    }
-
-    fun playTrack(track: AudioTrack, noInterrupt: Boolean = true) = player.startTrack(track, noInterrupt)
+    }*/
 
     fun togglePaused(): Boolean {
         audioPlayer.isPaused = !audioPlayer.isPaused
@@ -108,17 +104,5 @@ class PlayerManager : Controller() {
     fun close() {
         audioPlayer.destroy()
         audioDispatcher.close()
-    }
-
-    private fun formatQuery(query: String, source: String?): String {
-        return if (URI_PATTERN.matcher(query).matches()) {
-            query
-        } else {
-            "${searchableSources.getOrDefault(source, "ytsearch:")}$query"
-        }
-    }
-
-    companion object {
-        private val URI_PATTERN = Pattern.compile("((\\w+://)[-a-zA-Z0-9:@;?&=/%+.*!'(),\$_{}^~\\[\\]`#|]+)")
     }
 }

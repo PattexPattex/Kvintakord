@@ -3,24 +3,16 @@ package com.pattexpattex.kvintakord.app.views
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.fragments.AudioTrackCell
 import com.pattexpattex.kvintakord.music.player.PlayerManager
+import com.pattexpattex.kvintakord.music.player.SearchManager
 import com.pattexpattex.kvintakord.music.spotify.SpotifyApiManager
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
-import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
-import javafx.scene.input.KeyCode
 import javafx.scene.layout.Priority
 import tornadofx.*
 
 class SearchView : View() {
     val player = find<PlayerManager>()
-    private val input = stringProperty()
-    private val source = stringProperty(player.searchableSources.keys.first())
-    private var resultsSource = stringProperty(source.value)
-    private val results = listProperty(arrayListOf<AudioTrack>().asObservable())
-    private val resultsQuery = stringProperty()
+    private val searchManager = find<SearchManager>()
 
     override val root = borderpane {
         top = vbox {
@@ -31,20 +23,17 @@ class SearchView : View() {
 
                         prefWidthProperty().bind(this@borderpane.widthProperty())
 
-                        textfield(input) {
+                        searchManager.inputField = textfield {
                             hgrow = Priority.ALWAYS
                             prefHeight = 40.0
                             minWidth = 100.0
-                            setOnKeyPressed {
-                                if (it.code == KeyCode.ENTER) {
-                                    handleSearchAction()
-                                }
-                            }
+
+                            action { searchManager.searchAndDisplay() }
                         }
 
                         button("Search") {
                             prefHeight = 40.0
-                            action { handleSearchAction() }
+                            action { searchManager.searchAndDisplay() }
                         }.addClass(Style.SearchViewDoButton)
                     }
 
@@ -54,13 +43,13 @@ class SearchView : View() {
                     left = hbox {
                         label("Search source:").addClass(Style.SearchViewSourceLabel)
 
-                        togglegroup(source as ObservableValue<Any>) {
+                        searchManager.sourceToggleGroup = togglegroup {
                             spacing = 10.0
-                            player.searchableSources.forEach {
-                                radiobutton(it.key, group = this@togglegroup, value = it.key) {
-                                    alignment = Pos.CENTER
-                                }.addClass(Style.SearchViewSourceButton)
-                            }
+
+                            toggles.setAll(SearchManager.SOURCES.mapEach {
+                                    radiobutton(key, value = value) { alignment = Pos.CENTER }
+                                        .addClass(Style.SearchViewSourceButton)
+                            })
 
                             selectToggle(toggles[0])
                         }
@@ -77,12 +66,13 @@ class SearchView : View() {
 
         center = vbox {
             prefWidthProperty().bind(this@borderpane.widthProperty())
-            label(resultsQuery) {
+            label(searchManager.currentResultsQueryProperty) {
                 paddingAll = 10
             }.addClass(Style.SearchViewResultsQueryLabel)
 
-            listview<AudioTrack>(results) {
+            listview(searchManager.currentResults) {
                 setCellFactory { AudioTrackCell().addClass(Style.SearchTrackCell) }
+
                 prefHeightProperty().bind(items.sizeProperty.times(46.0).plus(2))
 
                 placeholder = label("Nothing here.") {
@@ -93,27 +83,7 @@ class SearchView : View() {
 
     }.addClass(Style.SearchView)
 
-    private fun handleSearchAction() {
-        if (input.valueSafe.isEmpty()) {
-            return
-        }
-
-        resultsSource.set(source.value)
-        player.search(input.valueSafe, source.value).thenAccept {
-            runLater {
-                resultsQuery.set(it.first)
-                results.setAll(it.second)
-            }
-        }.exceptionally {
-            runLater {
-                handleSearchException(it.cause ?: it)
-            }
-            null
-        }
-        input.value = null
-    }
-
-    private fun handleSearchException(throwable: Throwable) {
+    /*private fun handleSearchException(throwable: Throwable) {
         if (throwable is NullPointerException) {
             val apiManager = find<SpotifyApiManager>()
             val showSpotifyAuth = resultsSource.value == "Spotify" && !apiManager.areCredentialsValid()
@@ -145,7 +115,7 @@ class SearchView : View() {
                 title = "Whoops."
             )
         }
-    }
+    }*/
 
     companion object {
         private val OPEN_SPOTIFY_CREDENTIALS_BUTTON = ButtonType("Check credentials")
