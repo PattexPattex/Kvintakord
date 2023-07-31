@@ -24,15 +24,15 @@ class TrayIconManager : Controller() {
         FXTrayIcon.Builder(primaryStage, TrayIconManager::class.java.getResource("/icon.png")).apply {
             toolTip("Kvintakord")
             menuItem("Pause track") { updatePauseMenuItem(player.togglePaused()) }
-            menuItem("Skip track") { player.musicManager.skipTrack() }
-            menuItem("Restart track") { player.musicManager.restartTrackProgress() }
+            menuItem("Skip track") { player.queueManager.skipTrack() }
+            menuItem("Restart track") { player.audioPlayer.playingTrack?.position = 0 }
             separator()
             menu("Loop",
-                innerCheckMenuItem("Off") { player.musicManager.setLoop(LoopMode.OFF); updateLoopMenuItems(LoopMode.OFF) },
-                innerCheckMenuItem("All") { player.musicManager.setLoop(LoopMode.ALL); updateLoopMenuItems(LoopMode.ALL) },
-                innerCheckMenuItem("Single") { player.musicManager.setLoop(LoopMode.SINGLE); updateLoopMenuItems(LoopMode.SINGLE) }
+                innerCheckMenuItem("Off") { player.queueManager.loop = LoopMode.OFF; updateLoopMenuItems(LoopMode.OFF) },
+                innerCheckMenuItem("All") { player.queueManager.loop = LoopMode.ALL; updateLoopMenuItems(LoopMode.ALL) },
+                innerCheckMenuItem("Single") { player.queueManager.loop = LoopMode.SINGLE; updateLoopMenuItems(LoopMode.SINGLE) }
             )
-            checkMenuItem("Shuffle") { player.musicManager.incShuffle(); updateShuffleMenuItem(player.musicManager.shuffleMode.value) }
+            checkMenuItem("Shuffle") { player.queueManager.shuffle++; updateShuffleMenuItem(player.queueManager.shuffle) }
             separator()
             menuItem("Stop") { player.stop() }
             separator()
@@ -50,15 +50,15 @@ class TrayIconManager : Controller() {
             primaryStage.hide()
         }
 
-        player.paused.onChange {
+        player.audioPlayer.isPausedProperty.onChange {
             updatePauseMenuItem(it)
         }
 
-        player.musicManager.loopMode.onChange {
+        player.queueManager.loopProperty.onChange {
             updateLoopMenuItems(it)
         }
 
-        player.musicManager.shuffleMode.onChange {
+        player.queueManager.shuffleProperty.onChange {
             updateShuffleMenuItem(it)
         }
 
@@ -70,9 +70,9 @@ class TrayIconManager : Controller() {
             }
 
             runLater {
-                updatePauseMenuItem(player.paused.value)
-                updateLoopMenuItems(player.musicManager.loopMode.value)
-                updateShuffleMenuItem(player.musicManager.shuffleMode.value)
+                updatePauseMenuItem(player.audioPlayer.isPaused)
+                updateLoopMenuItems(player.queueManager.loop)
+                updateShuffleMenuItem(player.queueManager.shuffle)
             }
         }
     }

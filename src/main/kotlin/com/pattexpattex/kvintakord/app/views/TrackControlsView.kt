@@ -1,6 +1,5 @@
 package com.pattexpattex.kvintakord.app.views
 
-import com.pattexpattex.kvintakord.app.ObjectPropertyWrapper
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.fragments.ContextMenuBuilder
 import com.pattexpattex.kvintakord.app.openUrl
@@ -9,7 +8,6 @@ import com.pattexpattex.kvintakord.music.player.Executors
 import com.pattexpattex.kvintakord.music.player.PlayerManager
 import com.pattexpattex.kvintakord.music.player.metadata
 import com.pattexpattex.kvintakord.music.player.toReadableTime
-import javafx.beans.property.Property
 import javafx.geometry.Pos
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
@@ -19,17 +17,15 @@ import java.util.concurrent.TimeUnit
 
 class TrackControlsView : View("TrackControls") {
     private val player = find<PlayerManager>()
-    private var prevVol: Int = 100
     private val mixer = stringProperty()
     private val mixers = listProperty(arrayListOf<String>().asObservable())
-    private val position = ObjectPropertyWrapper({ player.musicManager.currentTrack.value?.position ?: 0 }, { player.musicManager.currentTrack.value?.position = it })
 
     init {
         player.audioDispatcher.addListener(::updateMixers)
         updateMixers(player.audioDispatcher)
 
         Executors.scheduledExecutor.scheduleAtFixedRate({
-            runLater { position.setLazy(player.musicManager.currentTrack.value?.position ?: 0) }
+            runLater { player.audioPlayer.playingTrackProperty.flatMap { it.positionProperty }.value }
         }, 0, 1, TimeUnit.SECONDS)
     }
 
@@ -63,11 +59,11 @@ class TrackControlsView : View("TrackControls") {
                     isSmooth = true
                     isPreserveRatio = true
 
-                    imageProperty().bind(player.musicManager.currentTrack.objectBinding {
-                        runCatching { Image(it?.metadata?.image) }.getOrNull()
+                    imageProperty().bind(player.audioPlayer.playingTrackProperty.map {
+                        runCatching { Image(it.metadata?.image) }.getOrNull()
                     })
 
-                    fitWidthProperty().bind(imageProperty().doubleBinding { if (it == null) .0 else 100.0 })
+                    fitWidthProperty().bind(imageProperty().map { if (it == null) .0 else 100.0 })
                 }
             }
 
@@ -78,37 +74,35 @@ class TrackControlsView : View("TrackControls") {
                 //minWidth = 150.0
                 //maxWidth = 200.0
 
-                hyperlink {
+                hyperlink(player.audioPlayer.playingTrackProperty.map {
+                    when (it) {
+                        null -> null
+                        else -> it.metadata?.name ?: "Untitled"
+                    }
+                }) {
                     //hgrow = Priority.ALWAYS
                     maxWidth = Region.USE_PREF_SIZE
 
                     hiddenWhen { textProperty().isNull }
-                    textProperty().bind(player.musicManager.currentTrack.stringBinding {
-                        when (it) {
-                            null -> null
-                            else -> it.metadata?.name ?: "Untitled"
-                        }
-                    })
 
                     action {
-                        player.musicManager.currentTrack.value?.metadata?.uri?.let { openUrl(it) }
+                        player.audioPlayer.playingTrack?.metadata?.uri?.let { openUrl(it) }
                     }
 
-                    ContextMenuBuilder.hyperlink(this, player.musicManager.currentTrack.stringBinding { it?.metadata?.uri })
+                    ContextMenuBuilder.hyperlink(this, player.audioPlayer.playingTrackProperty.map { it.metadata?.uri })
                 }.addClass(Style.GenericTrackNameLabel)
 
-                hyperlink {
+                hyperlink(player.audioPlayer.playingTrackProperty.map { it.metadata?.author }) {
                     maxWidth = Region.USE_PREF_SIZE
                     //hgrow = Priority.ALWAYS
 
                     hiddenWhen { textProperty().isNull }
-                    textProperty().bind(player.musicManager.currentTrack.stringBinding { it?.metadata?.author })
 
                     action {
-                        player.musicManager.currentTrack.value?.metadata?.authorUrl?.let { openUrl(it) }
+                        player.audioPlayer.playingTrack?.metadata?.authorUrl?.let { openUrl(it) }
                     }
 
-                    ContextMenuBuilder.hyperlink(this, player.musicManager.currentTrack.stringBinding { it?.metadata?.authorUrl })
+                    ContextMenuBuilder.hyperlink(this, player.audioPlayer.playingTrackProperty.map { it.metadata?.authorUrl })
                 }.addClass(Style.GenericTrackAuthorLabel)
 
                 // TODO
@@ -120,7 +114,7 @@ class TrackControlsView : View("TrackControls") {
                     hyperlink {
                         minWidth = Region.USE_PREF_SIZE
 
-                        textProperty().bind(player.musicManager.currentTrack.stringBinding { when (it) {
+                        textProperty().bind(player.musicManager.currentTrack.map { when (it) {
                             null -> "Nothing is playing"
                             else -> it.metadata?.name ?: "Untitled"
                         } })
@@ -174,10 +168,10 @@ class TrackControlsView : View("TrackControls") {
                 prefRows = 1
 
                 button { //Shuffle
-                    textProperty().bind(player.musicManager.shuffleMode.stringBinding { it!!.emoji })
 
+                    textProperty().bind(player.queueManager.shuffleProperty.map { it.emoji })
                     action {
-                        player.musicManager.incShuffle()
+                        player.queueManager.shuffle++
                     }
                 }.addClass(Style.TrackControlButton)
 
@@ -188,7 +182,7 @@ class TrackControlsView : View("TrackControls") {
                 }.addClass(Style.TrackControlButton)
 
                 button { //Play/Pause
-                    textProperty().bind(player.paused.stringBinding { if (it == true) "▶" else "⏸" })
+                    textProperty().bind(player.audioPlayer.isPausedProperty.map { if (it) "▶" else "⏸" })
 
                     action {
                         player.togglePaused()
@@ -197,15 +191,15 @@ class TrackControlsView : View("TrackControls") {
 
                 button("⏭") { //Skip
                     action {
-                        player.musicManager.skipTrack()
+                        player.queueManager.skipTrack()
                     }
                 }.addClass(Style.TrackControlButton)
 
                 button { //Loop
-                    textProperty().bind(player.musicManager.loopMode.stringBinding { it!!.emoji })
+                    textProperty().bind(player.queueManager.loopProperty.map { it.emoji })
 
                     action {
-                        player.musicManager.incLoop()
+                        player.queueManager.loop++
                     }
                 }.addClass(Style.TrackControlButton)
             }
@@ -217,29 +211,29 @@ class TrackControlsView : View("TrackControls") {
                 prefWidth = 600.0
                 maxWidth = Region.USE_PREF_SIZE
 
-                label {
-                    textProperty().bind(position.stringBinding { it.toReadableTime() })
-                }.addClass(Style.TrackControlTimeLabel)
+                val positionProperty = player.audioPlayer.playingTrackProperty.select { it.positionProperty }
+
+                label(positionProperty.map { it.toReadableTime() }).addClass(Style.TrackControlTimeLabel)
                 slider {
                     hgrow = Priority.ALWAYS
                     min = .0
 
-                    maxProperty().bind(player.musicManager.currentTrack.doubleBinding {
-                        when (it?.duration) {
+                    maxProperty().bind(player.audioPlayer.playingTrackProperty.map {
+                        when (it.duration) {
                             Long.MAX_VALUE -> -1.0
                             else -> it?.duration?.toDouble() ?: .0
                         }
                     })
 
                     disableWhen {
-                        player.musicManager.currentTrack.booleanBinding { it == null || it.duration == Long.MAX_VALUE }
+                        player.audioPlayer.playingTrackProperty.map { it == null || it.duration == Long.MAX_VALUE }
                     }
 
-                    valueProperty().bindBidirectional(position as Property<Number>)
+                    valueProperty().bindBidirectional(positionProperty)
                 }
                 label {
-                    textProperty().bind(player.musicManager.currentTrack.stringBinding {
-                        toReadableTime(it?.duration ?: 0)
+                    textProperty().bind(player.audioPlayer.playingTrackProperty.map {
+                        toReadableTime(it.duration)
                     })
                 }.addClass(Style.TrackControlTimeLabel)
             }
@@ -256,23 +250,25 @@ class TrackControlsView : View("TrackControls") {
                 paddingBottom = 10
 
                 button {
-                    textProperty().bind(player.volume.stringBinding { if (it != 0) "🔊" else "🔈" })
+                    textProperty().bind(player.audioPlayer.volumeProperty.map { if (it != 0) "🔊" else "🔈" })
+                    var prevVol = 100
 
                     action {
-                        if (player.volume.value != 0) {
-                            prevVol = player.volume.value
-                            player.volume.set(0)
+                        if (player.audioPlayer.volume != 0) {
+                            prevVol = player.audioPlayer.volume
+                            player.audioPlayer.volume = 0
                         } else {
-                            player.volume.set(prevVol)
+                            player.audioPlayer.volume = prevVol
                         }
                     }
                 }.addClass(Style.TrackControlButton) //mute
+
                 slider { //volume
                     alignment = Pos.CENTER_RIGHT
                     paddingLeft = 10
                     prefWidth = 100.0
 
-                    valueProperty().bindBidirectional(player.volume as Property<Number>)
+                    valueProperty().bindBidirectional(player.audioPlayer.volumeProperty)
                 }
             }
 

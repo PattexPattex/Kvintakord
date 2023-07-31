@@ -9,7 +9,7 @@ class DefaultView : View() {
     val player = find<PlayerManager>()
 
     init {
-        titleProperty.bind(player.musicManager.currentTrack.stringBinding { when (it) {
+        titleProperty.bind(player.audioPlayer.playingTrackProperty.map { when (it) {
             null -> "Nothing is playing"
             else -> it.metadata?.name ?: "Untitled"
         } })

@@ -11,55 +11,47 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import javafx.scene.control.Alert
-import javafx.scene.control.ButtonType
-import tornadofx.*
-import java.lang.NullPointerException
-import java.util.concurrent.CompletableFuture
-import java.util.regex.Pattern
+import tornadofx.Controller
+import tornadofx.runLater
+import java.util.concurrent.TimeUnit
 
 class PlayerManager : Controller() {
-    private val manager = DefaultAudioPlayerManager()
-    val musicManager = MusicManager(this)
+    val audioPlayerManager = DefaultAudioPlayerManager()
+    val queueManager = QueueManager(this)
+
     init {
-        manager.registerSourceManager(SpotifyAudioSourceManager(find<SpotifyApiManager>(), YoutubeAudioSourceManager()))
-        AudioSourceManagers.registerRemoteSources(manager)
-        AudioSourceManagers.registerLocalSource(manager)
-        manager.configuration.outputFormat = StandardAudioDataFormats.COMMON_PCM_S16_BE
+        audioPlayerManager.registerSourceManager(SpotifyAudioSourceManager(find<SpotifyApiManager>(), YoutubeAudioSourceManager()))
+        AudioSourceManagers.registerRemoteSources(audioPlayerManager)
+        AudioSourceManagers.registerLocalSource(audioPlayerManager)
+        audioPlayerManager.configuration.outputFormat = StandardAudioDataFormats.COMMON_PCM_S16_BE
     }
 
-    private val player = manager.createPlayer()
-    private val format = manager.configuration.outputFormat
-    private val stream = AudioPlayerInputStream.createStream(player, format, 0, true)
+    val audioPlayer = AudioPlayerAdapter.wrap(audioPlayerManager.createPlayer())
+    private val format = audioPlayerManager.configuration.outputFormat
+    private val stream = AudioPlayerInputStream.createStream(audioPlayer, format, 0, true)
     val audioDispatcher = AudioDispatcher(config.string("mixer", ""), stream)
-
-    val volume = ObjectPropertyWrapper(player::getVolume, player::setVolume)
-    private var _volume by volume
-    val paused = ObjectPropertyWrapper(player::isPaused, player::setPaused)
-    private var _paused by paused
-    val searchableSources = mapOf("Youtube" to "ytsearch:", "Youtube Music" to "ytmsearch:", "Spotify" to "spsearch:", "SoundCloud" to "scsearch:")
 
     init {
         loadConfiguration()
-        player.addListener(musicManager)
+        audioPlayer.addListener(queueManager)
         audioDispatcher.addListener { saveConfiguration("mixer", it.getMixer()?.mixerInfo?.name) }
+        Executors.scheduledExecutor.scheduleAtFixedRate({
+            runLater { audioPlayer.playingTrack?.updatePosition() }
+        }, 0, 1000, TimeUnit.MILLISECONDS)
     }
 
     private fun loadConfiguration() {
         with(config) {
-            _volume = int("vol", 100)
-            _paused = boolean("pause", false)
-            musicManager.loopMode.set(LoopMode.fromString(string("loop", "off")))
-            musicManager.shuffleMode.set(ShuffleMode.fromBoolean(boolean("shuffle", false)))
+            audioPlayer.volume = int("vol", 100)
+            audioPlayer.isPaused = boolean("pause", false)
+            queueManager.loop = LoopMode.fromString(string("loop", "off"))
+            queueManager.shuffle = ShuffleMode.fromBoolean(boolean("shuffle", false))
         }
 
-        volume.addListener { _, _, vol -> saveConfiguration("vol", vol) }
-        paused.addListener { _, _, pause -> saveConfiguration("pause", pause) }
-        musicManager.loopMode.addListener { _, _, loop -> saveConfiguration("loop", loop) }
-        musicManager.shuffleMode.addListener { _, _, shuffle -> saveConfiguration("shuffle", shuffle) }
+        audioPlayer.volumeProperty.addListener { _, _, vol -> saveConfiguration("vol", vol) }
+        audioPlayer.isPausedProperty.addListener { _, _, pause -> saveConfiguration("pause", pause) }
+        queueManager.loopProperty.addListener { _, _, loop -> saveConfiguration("loop", loop) }
+        queueManager.shuffleProperty.addListener { _, _, shuffle -> saveConfiguration("shuffle", shuffle) }
     }
 
     private fun <T> saveConfiguration(key: String, value: T) {
@@ -67,35 +59,6 @@ class PlayerManager : Controller() {
             set(key to value)
             save()
         }
-    }
-
-    fun play(query: String, source: String? = null) {
-        manager.loadItem(formatQuery(query, source), object : AudioLoadResultHandler {
-            override fun trackLoaded(track: AudioTrack) {
-                musicManager.addToQueue(TrackMetadata.buildFor(track))
-            }
-
-            override fun playlistLoaded(playlist: AudioPlaylist) {
-                if (playlist.isSearchResult) {
-                    musicManager.addToQueue(TrackMetadata.buildFor(playlist.selectedTrack ?: playlist.tracks[0]))
-                } else {
-                    musicManager.addToQueue(playlist.tracks.map(TrackMetadata::buildFor))
-                }
-            }
-
-            override fun noMatches() {
-                runLater { find<DefaultView>().root.apply {
-                    alert(Alert.AlertType.INFORMATION, buttons = arrayOf(ButtonType.CLOSE), header = "No results for \"$query\"")
-                } }
-
-            }
-
-            override fun loadFailed(exception: FriendlyException) {
-                runLater { find<DefaultView>().root.apply {
-                    alert(Alert.AlertType.WARNING, content = exception.message, buttons = arrayOf(ButtonType.CLOSE), title = "Hmmm...", header = "Hmmm...")
-                } }
-            }
-        })
     }
 
     fun search(query: String, source: String? = null): CompletableFuture<Pair<String, List<AudioTrack>>> {
@@ -131,19 +94,19 @@ class PlayerManager : Controller() {
     fun playTrack(track: AudioTrack, noInterrupt: Boolean = true) = player.startTrack(track, noInterrupt)
 
     fun togglePaused(): Boolean {
-        _paused = !_paused
-        return _paused
+        audioPlayer.isPaused = !audioPlayer.isPaused
+        return audioPlayer.isPaused
     }
 
     fun stop() {
-        player.stopTrack()
-        musicManager.stop()
+        audioPlayer.stopTrack()
+        queueManager.stop()
         //dispatcher.stop()
-        _paused = true
+        audioPlayer.isPaused = true
     }
 
     fun close() {
-        player.destroy()
+        audioPlayer.destroy()
         audioDispatcher.close()
     }
 
