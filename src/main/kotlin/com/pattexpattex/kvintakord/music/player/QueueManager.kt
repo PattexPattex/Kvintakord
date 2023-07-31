@@ -132,9 +132,10 @@ class QueueManager(private val playerManager: PlayerManager) : AudioEventAdapter
 
 		if (playerManager.audioPlayer.startTrack(ensureNotDuplicate(next), noInterrupt)) {
 			removeTrack(next)
-			updatePublicQueue()
 			runLater { playerManager.audioPlayer.isPaused = false }
 		}
+
+		updatePublicQueue()
 	}
 
 	private fun ensureNotDuplicate(audioTrack: AudioTrackAdapter): AudioTrackAdapter {
