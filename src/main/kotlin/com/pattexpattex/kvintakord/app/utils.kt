@@ -1,13 +1,14 @@
 package com.pattexpattex.kvintakord.app
 
 import com.pattexpattex.kvintakord.app.views.DefaultView
-import javafx.application.Platform
-import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.Property
+import javafx.beans.property.ReadOnlyObjectProperty
+import javafx.beans.property.ReadOnlyObjectPropertyBase
+import javafx.beans.property.ReadOnlyObjectWrapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.helpers.Util
 import tornadofx.find
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.time.ExperimentalTime
@@ -45,17 +46,10 @@ class LimitedHashSet<T>(private val limit: Int = 10) : AbstractMutableSet<T>() {
     override fun iterator(): MutableIterator<T> = set.iterator()
 }
 
-class ObjectPropertyWrapper<T>(private val get: () -> T, private val set: (T) -> Unit) : SimpleObjectProperty<T>() {
-    override fun get(): T {
-        return get.invoke().also { super.get() }
-    }
+fun <T : Any> T?.toReadOnlyProperty(): ReadOnlyObjectProperty<T> = ReadOnlyObjectWrapper<T>(this).readOnlyProperty
+fun <T : Any> Property<T>.readOnly(): ReadOnlyObjectProperty<T> = object : ReadOnlyObjectPropertyBase<T>() {
+    override fun get() = value
+    override fun getBean() = this@readOnly.bean
+    override fun getName() = this@readOnly.name
 
-    override fun set(newValue: T) {
-        set.invoke(newValue)
-        super.set(newValue)
-    }
-
-    fun setLazy(newValue: T) {
-        super.set(newValue)
-    }
 }
