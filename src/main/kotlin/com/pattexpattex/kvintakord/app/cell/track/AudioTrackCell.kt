@@ -18,6 +18,14 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
     private val queueManager = find<QueueManager>()
 
     init {
+        onDoubleClick {
+            if (isQueued()) {
+                item?.let(queueManager::skipToTrack)
+            } else if (isSearch()) {
+                item?.let(queueManager::addToQueue)
+            }
+        }
+
         addClass(Style.TrackCell)
         contentDisplay = ContentDisplay.CENTER
         alignment = Pos.CENTER
