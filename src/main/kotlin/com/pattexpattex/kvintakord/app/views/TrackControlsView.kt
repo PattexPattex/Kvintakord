@@ -1,12 +1,12 @@
 package com.pattexpattex.kvintakord.app.views
 
+import com.pattexpattex.kvintakord.app.ImageCache
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.fragments.ContextMenuBuilder
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.audio.MixerManager
 import com.pattexpattex.kvintakord.music.player.*
 import javafx.geometry.Pos
-import javafx.scene.image.Image
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import tornadofx.*
@@ -45,10 +45,7 @@ class TrackControlsView : View("TrackControls") {
                     isSmooth = true
                     isPreserveRatio = true
 
-                    imageProperty().bind(playerManager.audioPlayer.playingTrackProperty.map {
-                        runCatching { Image(it.metadata?.image) }.getOrNull()
-                    })
-
+                    imageProperty().bind(playerManager.audioPlayer.playingTrackProperty.map { ImageCache.getImage(it?.metadata?.image) })
                     fitWidthProperty().bind(imageProperty().map { if (it == null) .0 else 100.0 })
                 }
             }
