@@ -43,8 +43,9 @@ class QueueManager : Controller() {
 	}
 
 	fun playNow(audioTrack: AudioTrackAdapter) {
+		playerManager.audioPlayer.playingTrack?.let { addTrackFirst(ensureNotDuplicate(it)) }
 		addTrackFirst(audioTrack)
-		skipTrack()
+		skipTrack(true)
 	}
 
 	fun removeFromQueue(audioTrack: AudioTrackAdapter) {
@@ -57,9 +58,9 @@ class QueueManager : Controller() {
 		updatePublicQueue()
 	}
 
-	fun skipTrack() {
-		if (loop == LoopMode.ALL) {
-			playerManager.audioPlayer.playingTrack?.let { addTrack(AudioTrackAdapter.clone(it)) }
+	fun skipTrack(ignoreLoop: Boolean = false) {
+		if (!ignoreLoop && loop == LoopMode.ALL) {
+			playerManager.audioPlayer.playingTrack?.let { addTrack(ensureNotDuplicate(it)) }
 		}
 
 		nextTrack(false)
@@ -141,13 +142,12 @@ class QueueManager : Controller() {
 		updatePublicQueue()
 	}
 
-	private fun ensureNotDuplicate(audioTrack: AudioTrackAdapter): AudioTrackAdapter {
-		return if (audioTrack.state != AudioTrackState.INACTIVE) {
+	private fun ensureNotDuplicate(audioTrack: AudioTrack) =
+		if (audioTrack.state != AudioTrackState.INACTIVE || audioTrack !is AudioTrackAdapter) {
 			AudioTrackAdapter.clone(audioTrack)
 		} else {
 			audioTrack
 		}
-	}
 
 	private inner class EventListener : AudioEventAdapter() {
 		override fun onTrackStart(player: AudioPlayer?, track: AudioTrack?) {
