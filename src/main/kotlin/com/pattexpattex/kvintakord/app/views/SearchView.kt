@@ -15,6 +15,8 @@ class SearchView : View() {
     private val searchManager by inject<SearchManager>()
 
     override val root = borderpane {
+        addClass(Style.SearchView)
+
         top = vbox {
             form {
                 fieldset {
@@ -32,11 +34,11 @@ class SearchView : View() {
                         }
 
                         button("Search") {
+                            addClass(Style.SearchViewDoButton)
                             prefHeight = 40.0
                             action { searchManager.searchAndDisplay() }
-                        }.addClass(Style.SearchViewDoButton)
+                        }
                     }
-
                 }
 
                 borderpane {
@@ -56,32 +58,37 @@ class SearchView : View() {
                     }
 
                     right = button("Update Spotify credentials") {
+                        addClass(Style.SearchViewSpotifyAuthButton)
                         action {
                             find<SpotifyApiManager>().openCredentialsUpdateDialog(this@SearchView)
                         }
-                    }.addClass(Style.SearchViewSpotifyAuthButton)
+                    }
                 }
             }
         }
 
         center = vbox {
             prefWidthProperty().bind(this@borderpane.widthProperty())
+
             label(searchManager.currentResultsQueryProperty) {
+                addClass(Style.SearchViewResultsQueryLabel)
                 paddingAll = 10
-            }.addClass(Style.SearchViewResultsQueryLabel)
+            }
 
             listview(searchManager.currentResults) {
+                addClass(Style.QueueNextTrackListView)
                 setCellFactory { AudioTrackCell().addClass(Style.SearchTrackCell) }
 
                 prefHeightProperty().bind(items.sizeProperty.times(46.0).plus(2))
 
                 placeholder = label("Nothing here.") {
+                    addClass(Style.SearchViewNoResultsLabel)
                     alignment = Pos.CENTER
-                }.addClass(Style.SearchViewNoResultsLabel)
-            }.addClass(Style.QueueNextTrackListView)
+                }
+            }
         }
 
-    }.addClass(Style.SearchView)
+    }
 
     /*private fun handleSearchException(throwable: Throwable) {
         if (throwable is NullPointerException) {
