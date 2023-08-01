@@ -51,5 +51,4 @@ fun <T : Any> Property<T>.readOnly(): ReadOnlyObjectProperty<T> = object : ReadO
     override fun get() = value
     override fun getBean() = this@readOnly.bean
     override fun getName() = this@readOnly.name
-
 }
