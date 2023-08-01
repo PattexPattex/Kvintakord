@@ -3,7 +3,7 @@ package com.pattexpattex.kvintakord.app.views
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.fragments.ContextMenuBuilder
 import com.pattexpattex.kvintakord.app.openUrl
-import com.pattexpattex.kvintakord.music.audio.AudioDispatcher
+import com.pattexpattex.kvintakord.music.audio.MixerManager
 import com.pattexpattex.kvintakord.music.player.*
 import javafx.geometry.Pos
 import javafx.scene.image.Image
@@ -13,27 +13,15 @@ import tornadofx.*
 import java.util.concurrent.TimeUnit
 
 class TrackControlsView : View("TrackControls") {
-    private val player = find<PlayerManager>()
-    private val mixer = stringProperty()
-    private val mixers = listProperty(arrayListOf<String>().asObservable())
+    private val playerManager by inject<PlayerManager>()
     private val queueManager by inject<QueueManager>()
+    private val mixerManager by inject<MixerManager>()
 
     init {
-        player.audioDispatcher.addListener(::updateMixers)
-        updateMixers(player.audioDispatcher)
 
         Executors.scheduledExecutor.scheduleAtFixedRate({
-            runLater { player.audioPlayer.playingTrackProperty.flatMap { it.positionProperty }.value }
+            runLater { playerManager.audioPlayer.playingTrackProperty.flatMap { it.positionProperty }.value }
         }, 0, 1, TimeUnit.SECONDS)
-    }
-
-    private fun updateMixers(dispatcher: AudioDispatcher) {
-        runLater {
-            val newMixer = dispatcher.getMixer()?.mixerInfo?.name
-            mixer.set(newMixer)
-            mixers.setAll(dispatcher.getMixers().map { it.mixerInfo.name })
-            mixer.set(newMixer)
-        }
     }
 
     override val root = hbox {
@@ -57,7 +45,7 @@ class TrackControlsView : View("TrackControls") {
                     isSmooth = true
                     isPreserveRatio = true
 
-                    imageProperty().bind(player.audioPlayer.playingTrackProperty.map {
+                    imageProperty().bind(playerManager.audioPlayer.playingTrackProperty.map {
                         runCatching { Image(it.metadata?.image) }.getOrNull()
                     })
 
@@ -72,7 +60,7 @@ class TrackControlsView : View("TrackControls") {
                 //minWidth = 150.0
                 //maxWidth = 200.0
 
-                hyperlink(player.audioPlayer.playingTrackProperty.map {
+                hyperlink(playerManager.audioPlayer.playingTrackProperty.map {
                     when (it) {
                         null -> null
                         else -> it.metadata?.name ?: "Untitled"
@@ -84,23 +72,23 @@ class TrackControlsView : View("TrackControls") {
                     hiddenWhen { textProperty().isNull }
 
                     action {
-                        player.audioPlayer.playingTrack?.metadata?.uri?.let { openUrl(it) }
+                        playerManager.audioPlayer.playingTrack?.metadata?.uri?.let { openUrl(it) }
                     }
 
-                    ContextMenuBuilder.hyperlink(this, player.audioPlayer.playingTrackProperty.map { it.metadata?.uri })
+                    ContextMenuBuilder.hyperlink(this, playerManager.audioPlayer.playingTrackProperty.map { it.metadata?.uri })
                 }.addClass(Style.GenericTrackNameLabel)
 
-                hyperlink(player.audioPlayer.playingTrackProperty.map { it.metadata?.author }) {
+                hyperlink(playerManager.audioPlayer.playingTrackProperty.map { it.metadata?.author }) {
                     maxWidth = Region.USE_PREF_SIZE
                     //hgrow = Priority.ALWAYS
 
                     hiddenWhen { textProperty().isNull }
 
                     action {
-                        player.audioPlayer.playingTrack?.metadata?.authorUrl?.let { openUrl(it) }
+                        playerManager.audioPlayer.playingTrack?.metadata?.authorUrl?.let { openUrl(it) }
                     }
 
-                    ContextMenuBuilder.hyperlink(this, player.audioPlayer.playingTrackProperty.map { it.metadata?.authorUrl })
+                    ContextMenuBuilder.hyperlink(this, playerManager.audioPlayer.playingTrackProperty.map { it.metadata?.authorUrl })
                 }.addClass(Style.GenericTrackAuthorLabel)
 
                 // TODO
@@ -175,15 +163,15 @@ class TrackControlsView : View("TrackControls") {
 
                 button("⏹") { //Stop
                     action {
-                        player.stop()
+                        playerManager.stop()
                     }
                 }.addClass(Style.TrackControlButton)
 
                 button { //Play/Pause
-                    textProperty().bind(player.audioPlayer.isPausedProperty.map { if (it) "▶" else "⏸" })
+                    textProperty().bind(playerManager.audioPlayer.isPausedProperty.map { if (it) "▶" else "⏸" })
 
                     action {
-                        player.togglePaused()
+                        playerManager.togglePaused()
                     }
                 }.addClass(Style.TrackControlButton)
 
@@ -209,14 +197,14 @@ class TrackControlsView : View("TrackControls") {
                 prefWidth = 600.0
                 maxWidth = Region.USE_PREF_SIZE
 
-                val positionProperty = player.audioPlayer.playingTrackProperty.select { it.positionProperty }
+                val positionProperty = playerManager.audioPlayer.playingTrackProperty.select { it.positionProperty }
 
                 label(positionProperty.map { it.toReadableTime() }).addClass(Style.TrackControlTimeLabel)
                 slider {
                     hgrow = Priority.ALWAYS
                     min = .0
 
-                    maxProperty().bind(player.audioPlayer.playingTrackProperty.map {
+                    maxProperty().bind(playerManager.audioPlayer.playingTrackProperty.map {
                         when (it.duration) {
                             Long.MAX_VALUE -> -1.0
                             else -> it?.duration?.toDouble() ?: .0
@@ -224,13 +212,13 @@ class TrackControlsView : View("TrackControls") {
                     })
 
                     disableWhen {
-                        player.audioPlayer.playingTrackProperty.map { it == null || it.duration == Long.MAX_VALUE }
+                        playerManager.audioPlayer.playingTrackProperty.map { it == null || it.duration == Long.MAX_VALUE }
                     }
 
                     valueProperty().bindBidirectional(positionProperty)
                 }
                 label {
-                    textProperty().bind(player.audioPlayer.playingTrackProperty.map {
+                    textProperty().bind(playerManager.audioPlayer.playingTrackProperty.map {
                         toReadableTime(it.duration)
                     })
                 }.addClass(Style.TrackControlTimeLabel)
@@ -248,15 +236,15 @@ class TrackControlsView : View("TrackControls") {
                 paddingBottom = 10
 
                 button {
-                    textProperty().bind(player.audioPlayer.volumeProperty.map { if (it != 0) "🔊" else "🔈" })
+                    textProperty().bind(playerManager.audioPlayer.volumeProperty.map { if (it != 0) "🔊" else "🔈" })
                     var prevVol = 100
 
                     action {
-                        if (player.audioPlayer.volume != 0) {
-                            prevVol = player.audioPlayer.volume
-                            player.audioPlayer.volume = 0
+                        if (playerManager.audioPlayer.volume != 0) {
+                            prevVol = playerManager.audioPlayer.volume
+                            playerManager.audioPlayer.volume = 0
                         } else {
-                            player.audioPlayer.volume = prevVol
+                            playerManager.audioPlayer.volume = prevVol
                         }
                     }
                 }.addClass(Style.TrackControlButton) //mute
@@ -266,15 +254,11 @@ class TrackControlsView : View("TrackControls") {
                     paddingLeft = 10
                     prefWidth = 100.0
 
-                    valueProperty().bindBidirectional(player.audioPlayer.volumeProperty)
+                    valueProperty().bindBidirectional(playerManager.audioPlayer.volumeProperty)
                 }
             }
 
-            combobox(mixer, mixers) {
-                mixer.onChange {
-                    selectedItem?.let { player.audioDispatcher.setMixer(it) }
-                }
-            }.addClass(Style.TrackControlMixerCombobox)
+            combobox(mixerManager.mixerProperty, mixerManager.availableMixers).addClass(Style.TrackControlMixerCombobox)
         }
     }
 }

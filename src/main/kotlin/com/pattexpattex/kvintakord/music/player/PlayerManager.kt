@@ -2,6 +2,7 @@ package com.pattexpattex.kvintakord.music.player
 
 import com.pattexpattex.kvintakord.music.adapter.AudioPlayerAdapter
 import com.pattexpattex.kvintakord.music.audio.AudioDispatcher
+import com.pattexpattex.kvintakord.music.audio.MixerManager
 import com.pattexpattex.kvintakord.music.spotify.SpotifyApiManager
 import com.pattexpattex.kvintakord.music.spotify.SpotifyAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.format.AudioPlayerInputStream
@@ -10,12 +11,14 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import tornadofx.Controller
+import tornadofx.onChange
 import tornadofx.runLater
 import java.util.concurrent.TimeUnit
 
 class PlayerManager : Controller() {
     val audioPlayerManager = DefaultAudioPlayerManager()
     private val queueManager by inject<QueueManager>()
+    private val mixerManager by inject<MixerManager>()
 
     init {
         audioPlayerManager.registerSourceManager(SpotifyAudioSourceManager(find<SpotifyApiManager>(), YoutubeAudioSourceManager()))
@@ -27,11 +30,14 @@ class PlayerManager : Controller() {
     val audioPlayer = AudioPlayerAdapter.wrap(audioPlayerManager.createPlayer())
     private val format = audioPlayerManager.configuration.outputFormat
     private val stream = AudioPlayerInputStream.createStream(audioPlayer, format, 0, true)
-    val audioDispatcher = AudioDispatcher(config.string("mixer", ""), stream)
+    val audioDispatcher: AudioDispatcher
 
     init {
         loadConfiguration()
-        audioDispatcher.addListener { saveConfiguration("mixer", it.getMixer()?.mixerInfo?.name) }
+
+        mixerManager.setup(stream.format)
+        audioDispatcher = AudioDispatcher(mixerManager, stream)
+
         Executors.scheduledExecutor.scheduleAtFixedRate({
             runLater { audioPlayer.playingTrack?.updatePosition() }
         }, 0, 1000, TimeUnit.MILLISECONDS)
@@ -47,13 +53,13 @@ class PlayerManager : Controller() {
             queueManager.shuffle = ShuffleMode.fromBoolean(boolean("shuffle", false))
         }
 
-        audioPlayer.volumeProperty.addListener { _, _, vol -> saveConfiguration("vol", vol) }
-        audioPlayer.isPausedProperty.addListener { _, _, pause -> saveConfiguration("pause", pause) }
-        queueManager.loopProperty.addListener { _, _, loop -> saveConfiguration("loop", loop) }
-        queueManager.shuffleProperty.addListener { _, _, shuffle -> saveConfiguration("shuffle", shuffle) }
+        audioPlayer.volumeProperty.onChange { save("vol", it) }
+        audioPlayer.isPausedProperty.onChange { save("pause", it) }
+        queueManager.loopProperty.onChange { save("loop", it) }
+        queueManager.shuffleProperty.onChange { save("shuffle", it) }
     }
 
-    private fun <T> saveConfiguration(key: String, value: T) {
+    private fun <T> save(key: String, value: T) {
         with(config) {
             set(key to value)
             save()
@@ -104,6 +110,6 @@ class PlayerManager : Controller() {
 
     fun close() {
         audioPlayer.destroy()
-        audioDispatcher.close()
+        audioDispatcher.destroy()
     }
 }
