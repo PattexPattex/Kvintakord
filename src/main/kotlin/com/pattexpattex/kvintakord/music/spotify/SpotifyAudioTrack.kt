@@ -1,12 +1,18 @@
 package com.pattexpattex.kvintakord.music.spotify
 
 import com.adamratzman.spotify.models.Track
-import com.pattexpattex.kvintakord.music.player.TrackMetadata
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioTrack
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 
-class SpotifyAudioTrack(baseAudioTrack: YoutubeAudioTrack?, backingTrack: Track) : YoutubeAudioTrack(baseAudioTrack?.info, baseAudioTrack?.sourceManager as? YoutubeAudioSourceManager) {
-    init {
-        TrackMetadata.buildForSpotify(this, backingTrack)
+class SpotifyAudioTrack(
+    private val baseAudioTrack: YoutubeAudioTrack,
+    val backingTrack: Track
+) : YoutubeAudioTrack(
+    baseAudioTrack.info,
+    baseAudioTrack.sourceManager as? YoutubeAudioSourceManager
+) {
+    override fun makeShallowClone(): AudioTrack {
+        return SpotifyAudioTrack(baseAudioTrack, backingTrack)
     }
 }

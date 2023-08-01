@@ -1,16 +1,12 @@
-package com.pattexpattex.kvintakord.app.fragments
+package com.pattexpattex.kvintakord.app
 
-import com.pattexpattex.kvintakord.app.Style
-import com.pattexpattex.kvintakord.app.openUrl
-import com.pattexpattex.kvintakord.music.player.PlayerManager
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack
-import javafx.beans.property.StringProperty
+import com.pattexpattex.kvintakord.music.adapter.AudioTrackAdapter
+import com.pattexpattex.kvintakord.music.player.QueueManager
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
 import javafx.scene.control.Hyperlink
 import javafx.scene.input.Clipboard
 import tornadofx.*
-
 
 object ContextMenuBuilder {
     fun hyperlink(hyperlink: Hyperlink, uri: String?) {
@@ -45,22 +41,22 @@ object ContextMenuBuilder {
         }
     }
 
-    fun currentTrack(target: EventTarget, track: AudioTrack) {
+    fun currentTrack(target: EventTarget, track: AudioTrackAdapter) {
         target.contextmenu {
 
         }
     }
 
-    fun queuedTrack(target: EventTarget, track: AudioTrack) {
+    fun queuedTrack(target: EventTarget, track: AudioTrackAdapter) {
         target.contextmenu {
             item("Play now") {
                 action {
-                    player.musicManager.skipTrack(player.musicManager.queue.indexOf(track))
+                    queueManager.skipToTrack(queueManager.queue.indexOf(track))
                 }
             }
             item("Remove") {
                 action {
-                    player.musicManager.removeFromQueue(track)
+                    queueManager.removeFromQueue(track)
                 }
             }
         }.style {
@@ -70,20 +66,20 @@ object ContextMenuBuilder {
         }
     }
 
-    fun searchTrack(target: EventTarget, track: AudioTrack) {
+    fun searchTrack(target: EventTarget, track: AudioTrackAdapter) {
         target.contextmenu {
             item("Play now") {
                 action {
-                    player.musicManager.playNow(track)
+                    queueManager.playNow(track)
                 }
             }
             item("Add to queue") {
                 action {
-                    player.musicManager.addToQueue(track)
+                    queueManager.addToQueue(track)
                 }
             }
         }
     }
 
-    private val player get() = find<PlayerManager>()
+    private val queueManager get() = find<QueueManager>()
 }

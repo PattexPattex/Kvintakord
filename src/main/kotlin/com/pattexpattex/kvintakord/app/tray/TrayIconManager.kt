@@ -1,10 +1,7 @@
 package com.pattexpattex.kvintakord.app.tray
 
 import com.dustinredmond.fxtrayicon.FXTrayIcon
-import com.pattexpattex.kvintakord.music.player.Executors
-import com.pattexpattex.kvintakord.music.player.LoopMode
-import com.pattexpattex.kvintakord.music.player.PlayerManager
-import com.pattexpattex.kvintakord.music.player.ShuffleMode
+import com.pattexpattex.kvintakord.music.player.*
 import javafx.application.Platform
 import javafx.event.ActionEvent
 import javafx.event.EventHandler
@@ -18,23 +15,24 @@ import java.awt.Menu
 import java.awt.SystemTray
 
 class TrayIconManager : Controller() {
-    private val player by lazy { find<PlayerManager>() }
+    private val playerManager by inject<PlayerManager>()
+    private val queueManager by inject<QueueManager>()
 
     private val trayIcon by lazy {
         FXTrayIcon.Builder(primaryStage, TrayIconManager::class.java.getResource("/icon.png")).apply {
             toolTip("Kvintakord")
-            menuItem("Pause track") { updatePauseMenuItem(player.togglePaused()) }
-            menuItem("Skip track") { player.musicManager.skipTrack() }
-            menuItem("Restart track") { player.musicManager.restartTrackProgress() }
+            menuItem("Pause track") { updatePauseMenuItem(playerManager.togglePaused()) }
+            menuItem("Skip track") { queueManager.skipTrack() }
+            menuItem("Restart track") { playerManager.audioPlayer.playingTrack?.position = 0 }
             separator()
             menu("Loop",
-                innerCheckMenuItem("Off") { player.musicManager.setLoop(LoopMode.OFF); updateLoopMenuItems(LoopMode.OFF) },
-                innerCheckMenuItem("All") { player.musicManager.setLoop(LoopMode.ALL); updateLoopMenuItems(LoopMode.ALL) },
-                innerCheckMenuItem("Single") { player.musicManager.setLoop(LoopMode.SINGLE); updateLoopMenuItems(LoopMode.SINGLE) }
+                innerCheckMenuItem("Off") { queueManager.loop = LoopMode.OFF; updateLoopMenuItems(LoopMode.OFF) },
+                innerCheckMenuItem("All") { queueManager.loop = LoopMode.ALL; updateLoopMenuItems(LoopMode.ALL) },
+                innerCheckMenuItem("Single") { queueManager.loop = LoopMode.SINGLE; updateLoopMenuItems(LoopMode.SINGLE) }
             )
-            checkMenuItem("Shuffle") { player.musicManager.incShuffle(); updateShuffleMenuItem(player.musicManager.shuffleMode.value) }
+            checkMenuItem("Shuffle") { queueManager.shuffle++; updateShuffleMenuItem(queueManager.shuffle) }
             separator()
-            menuItem("Stop") { player.stop() }
+            menuItem("Stop") { playerManager.stop() }
             separator()
             addExitMenuItem("Exit")
         }.build()
@@ -50,15 +48,15 @@ class TrayIconManager : Controller() {
             primaryStage.hide()
         }
 
-        player.paused.onChange {
+        playerManager.audioPlayer.isPausedProperty.onChange {
             updatePauseMenuItem(it)
         }
 
-        player.musicManager.loopMode.onChange {
+        queueManager.loopProperty.onChange {
             updateLoopMenuItems(it)
         }
 
-        player.musicManager.shuffleMode.onChange {
+        queueManager.shuffleProperty.onChange {
             updateShuffleMenuItem(it)
         }
 
@@ -70,9 +68,9 @@ class TrayIconManager : Controller() {
             }
 
             runLater {
-                updatePauseMenuItem(player.paused.value)
-                updateLoopMenuItems(player.musicManager.loopMode.value)
-                updateShuffleMenuItem(player.musicManager.shuffleMode.value)
+                updatePauseMenuItem(playerManager.audioPlayer.isPaused)
+                updateLoopMenuItems(queueManager.loop)
+                updateShuffleMenuItem(queueManager.shuffle)
             }
         }
     }

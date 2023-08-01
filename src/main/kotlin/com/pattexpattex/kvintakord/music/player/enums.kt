@@ -6,7 +6,7 @@ enum class LoopMode(val formatted: String, val emoji: String) {
     SINGLE("single", "\uD83D\uDD02")
     ;
 
-    fun next() = when (this) {
+    operator fun inc() = when (this) {
         OFF -> ALL
         ALL -> SINGLE
         SINGLE -> OFF
@@ -30,7 +30,7 @@ enum class ShuffleMode(val enabled: Boolean, val emoji: String) {
     OFF(false, "➡")
     ;
 
-    fun next() = when (this) {
+    operator fun inc() = when (this) {
         ON -> OFF
         OFF -> ON
     }

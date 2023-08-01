@@ -1,18 +1,15 @@
 package com.pattexpattex.kvintakord.app.views
 
 import com.pattexpattex.kvintakord.app.Style
+import com.pattexpattex.kvintakord.app.views.trackcontrol.TrackControlView
 import com.pattexpattex.kvintakord.music.player.PlayerManager
-import com.pattexpattex.kvintakord.music.player.metadata
 import tornadofx.*
 
 class DefaultView : View() {
-    val player = find<PlayerManager>()
+    val player by inject<PlayerManager>()
 
     init {
-        titleProperty.bind(player.musicManager.currentTrack.stringBinding { when (it) {
-            null -> "Nothing is playing"
-            else -> it.metadata?.name ?: "Untitled"
-        } })
+        titleProperty.bind(player.audioPlayer.playingTrackProperty.stringBinding { it?.clientInfo?.title ?: "Nothing is playing" })
     }
 
     override val root = borderpane {
@@ -34,10 +31,6 @@ class DefaultView : View() {
             }
         }.addClass(Style.ViewSelectionTabPane)
 
-        bottom = find(TRACK_CONTROLS_CLASS).root
-    }
-
-    companion object {
-        val TRACK_CONTROLS_CLASS = TrackControlsView::class
+        bottom = find<TrackControlView>().root
     }
 }
