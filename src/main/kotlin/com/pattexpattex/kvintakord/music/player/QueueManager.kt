@@ -155,26 +155,20 @@ class QueueManager : Controller() {
 		}
 
 		@Volatile private var retried = false
-		@Volatile private var exception = false
 
 		override fun onTrackEnd(player: AudioPlayer, track: AudioTrack, endReason: AudioTrackEndReason) {
 			if (endReason == AudioTrackEndReason.LOAD_FAILED && !retried) {
 				retried = true
-				addToQueueFirst(AudioTrackAdapter.clone(track))
+				addToQueueFirst(ensureNotDuplicate(track))
 				return
 			} else {
 				retried = false
 			}
 
-			if (exception) {
-				runCatching { Thread.sleep(2000) }
-				exception = false
-			}
-
 			if (endReason.mayStartNext) {
 				when (loop) {
-					LoopMode.SINGLE -> addToQueueFirst(AudioTrackAdapter.clone(track))
-					LoopMode.ALL -> addToQueue(AudioTrackAdapter.clone(track))
+					LoopMode.SINGLE -> addToQueueFirst(ensureNotDuplicate(track))
+					LoopMode.ALL -> addToQueue(ensureNotDuplicate(track))
 					else -> nextTrack(true)
 				}
 			}
@@ -183,8 +177,10 @@ class QueueManager : Controller() {
 		}
 
 		override fun onTrackException(player: AudioPlayer?, track: AudioTrack?, exception: FriendlyException?) {
-			this.exception = true
-			updatePublicQueue() //TODO error handling
+			runLater {
+				nextTrack(false)
+				updatePublicQueue() //TODO error handling
+			}
 		}
 
 		override fun onTrackStuck(
