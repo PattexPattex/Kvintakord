@@ -104,7 +104,7 @@ class QueueManager : Controller() {
 	}
 
 	private fun updatePublicQueue() {
-		_queue.setAll(actualQueue)
+		runLater { _queue.setAll(actualQueue) }
 	}
 
 	private fun copyQueue() = actualQueue.toMutableList()
