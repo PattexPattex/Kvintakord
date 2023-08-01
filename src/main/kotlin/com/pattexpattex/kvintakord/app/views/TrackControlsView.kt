@@ -5,24 +5,19 @@ import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.fragments.ContextMenuBuilder
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.audio.MixerManager
-import com.pattexpattex.kvintakord.music.player.*
+import com.pattexpattex.kvintakord.music.player.PlayerManager
+import com.pattexpattex.kvintakord.music.player.QueueManager
+import com.pattexpattex.kvintakord.music.player.metadata
+import com.pattexpattex.kvintakord.music.player.toReadableTime
 import javafx.geometry.Pos
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import tornadofx.*
-import java.util.concurrent.TimeUnit
 
 class TrackControlsView : View("TrackControls") {
     private val playerManager by inject<PlayerManager>()
     private val queueManager by inject<QueueManager>()
     private val mixerManager by inject<MixerManager>()
-
-    init {
-
-        Executors.scheduledExecutor.scheduleAtFixedRate({
-            runLater { playerManager.audioPlayer.playingTrackProperty.flatMap { it.positionProperty }.value }
-        }, 0, 1, TimeUnit.SECONDS)
-    }
 
     override val root = hbox {
         alignment = Pos.CENTER
