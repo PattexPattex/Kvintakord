@@ -25,7 +25,7 @@ class SearchView : View() {
 
                         prefWidthProperty().bind(this@borderpane.widthProperty())
 
-                        searchManager.inputField = textfield {
+                        textfield(searchManager.queryProperty) {
                             hgrow = Priority.ALWAYS
                             prefHeight = 40.0
                             minWidth = 100.0
@@ -45,15 +45,19 @@ class SearchView : View() {
                     left = hbox {
                         label("Search source:").addClass(Style.SearchViewSourceLabel)
 
-                        searchManager.sourceToggleGroup = togglegroup {
+                        togglegroup {
                             spacing = 10.0
 
-                            toggles.setAll(SearchManager.SOURCES.mapEach {
-                                    radiobutton(key, value = value) { alignment = Pos.CENTER }
-                                        .addClass(Style.SearchViewSourceButton)
-                            })
+                            for ((key, _) in SearchManager.SOURCES) {
+                                radiobutton(key, this, key) {
+                                    addClass(Style.SearchViewSourceButton)
+                                    alignment = Pos.CENTER
+                                }
+                            }
 
                             selectToggle(toggles[0])
+
+                            bind(searchManager.sourceProperty)
                         }
                     }
 

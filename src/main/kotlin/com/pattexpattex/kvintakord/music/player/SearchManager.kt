@@ -6,24 +6,25 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist
-import javafx.scene.control.TextField
-import javafx.scene.control.ToggleGroup
-import tornadofx.*
+import tornadofx.Controller
+import tornadofx.observableListOf
+import tornadofx.runLater
+import tornadofx.stringProperty
 import java.util.regex.Pattern
 
 class SearchManager : Controller() {
 	private val playerManager by inject<PlayerManager>()
 
-	var inputField by singleAssign<TextField>()
-	var sourceToggleGroup by singleAssign<ToggleGroup>()
+	val sourceProperty = stringProperty("Youtube")
+	val queryProperty = stringProperty()
 	val currentResults = observableListOf<AudioTrackAdapter>()
 	val currentResultsQueryProperty = stringProperty()
 
 	fun searchAndDisplay() {
-		val query = inputField.text ?: return
-		val source = sourceToggleGroup.selectedValueProperty<String>().get()
+		val query = queryProperty.value ?: return
+		val source = SOURCES[sourceProperty.value]
 
-		currentResultsQueryProperty.set(query)
+		currentResultsQueryProperty.set("Results for: $query")
 		playerManager.audioPlayerManager.loadItem(formatQuery(query, source), LoadHandler())
 	}
 
