@@ -14,9 +14,7 @@ import kotlin.reflect.KProperty
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
-fun openUrl(url: String) {
-    find<DefaultView>().hostServices.showDocument(url)
-}
+fun openUrl(url: String?) = url?.let { find<DefaultView>().hostServices.showDocument(it) }
 
 @OptIn(ExperimentalTime::class)
 fun <T> logTime(description: String = "Action", log: Logger = SLF4J(Util.getCallingClass().kotlin), block: () -> T): T =
