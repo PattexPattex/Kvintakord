@@ -2,17 +2,13 @@ package com.pattexpattex.kvintakord.app.views
 
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.music.player.PlayerManager
-import com.pattexpattex.kvintakord.music.player.metadata
 import tornadofx.*
 
 class DefaultView : View() {
     val player by inject<PlayerManager>()
 
     init {
-        titleProperty.bind(player.audioPlayer.playingTrackProperty.map { when (it) {
-            null -> "Nothing is playing"
-            else -> it.metadata?.name ?: "Untitled"
-        } })
+        titleProperty.bind(player.audioPlayer.playingTrackProperty.stringBinding { it?.clientInfo?.title ?: "Nothing is playing" })
     }
 
     override val root = borderpane {

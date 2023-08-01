@@ -41,11 +41,7 @@ class SearchManager : Controller() {
 
 		override fun playlistLoaded(playlist: AudioPlaylist) {
 			runLater {
-				currentResults.setAll(
-					playlist.tracks
-						.map(TrackMetadata::buildFor)
-						.mapNotNull(AudioTrackAdapter::wrap)
-				)
+				currentResults.setAll(playlist.tracks.mapNotNull(AudioTrackAdapter::wrap))
 			}
 		}
 

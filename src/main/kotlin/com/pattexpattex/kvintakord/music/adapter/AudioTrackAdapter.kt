@@ -10,6 +10,7 @@ import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.adapter.JavaBeanLongPropertyBuilder
 import javafx.beans.property.adapter.JavaBeanObjectPropertyBuilder
 import javafx.beans.property.adapter.ReadOnlyJavaBeanObjectPropertyBuilder
+import tornadofx.getValue
 
 class AudioTrackAdapter private constructor(track: InternalAudioTrack) : InternalAudioTrack by track {
 	private val _stateProperty = ReadOnlyJavaBeanObjectPropertyBuilder.create<AudioTrackState>().bean(track).name("state").build()
@@ -20,6 +21,7 @@ class AudioTrackAdapter private constructor(track: InternalAudioTrack) : Interna
 	val positionProperty: LongProperty = _positionProperty
 	val userDataProperty: ObjectProperty<Any> = _userDataProperty
 	val infoProperty = track.info.toReadOnlyProperty()
+	val clientInfoProperty = ClientAudioTrackInfo.create(track).toReadOnlyProperty()
 	val durationProperty = track.duration.toReadOnlyProperty()
 	val identifierProperty = track.identifier.toReadOnlyProperty()
 	val isSeekableProperty = track.isSeekable.toReadOnlyProperty()
@@ -27,6 +29,7 @@ class AudioTrackAdapter private constructor(track: InternalAudioTrack) : Interna
 
 	override fun setPosition(position: Long) = _positionProperty.set(position)
 	override fun setUserData(userData: Any?) = _userDataProperty.set(userData)
+	val clientInfo: ClientAudioTrackInfo by clientInfoProperty
 
 	fun clone() = wrap(makeClone())!!
 

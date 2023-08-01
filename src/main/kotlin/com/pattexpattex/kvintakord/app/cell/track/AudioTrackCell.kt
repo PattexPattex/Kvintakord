@@ -6,7 +6,6 @@ import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.adapter.AudioTrackAdapter
 import com.pattexpattex.kvintakord.music.player.QueueManager
-import com.pattexpattex.kvintakord.music.player.metadata
 import com.pattexpattex.kvintakord.music.player.toReadableTime
 import javafx.geometry.Pos
 import javafx.scene.control.ContentDisplay
@@ -32,7 +31,7 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
             val clipboard = ClipboardContent()
             clipboard.putString(item.identifier)
 
-            dragboard.dragView = ImageCache.getImage(item.metadata?.image)
+            dragboard.dragView = ImageCache.getImage(item.clientInfo.imageUrl)
             dragboard.setContent(clipboard)
             event.consume()
         }
@@ -110,7 +109,7 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
                     }
 
                     imageview {
-                        image = ImageCache.getImage(item.metadata?.image)
+                        image = ImageCache.getImage(item.clientInfo.imageUrl)
                     }
                     paddingRight = 5
                 }
@@ -118,21 +117,21 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
                 center = vbox {
                     alignment = Pos.CENTER_LEFT
                     prefWidth = 100.0
-                    hyperlink(item.metadata?.name ?: "Untitled") {
+                    hyperlink(item.clientInfo.title) {
                         paddingAll = 0
                         action {
-                            item.metadata?.uri?.let { openUrl(it) }
+                            openUrl(item.clientInfo.uri)
                         }
 
-                        ContextMenuBuilder.hyperlink(this, item.metadata?.uri)
+                        ContextMenuBuilder.hyperlink(this, item.clientInfo.uri)
                     }.addClass(Style.GenericTrackNameLabel)
-                    hyperlink(item.metadata?.author ?: "") {
+                    hyperlink(item.clientInfo.author) {
                         paddingAll = 0
                         action {
-                            item.metadata?.authorUrl?.let { openUrl(it) }
+                            openUrl(item.clientInfo.authorUrl)
                         }
 
-                        ContextMenuBuilder.hyperlink(this, item.metadata?.authorUrl)
+                        ContextMenuBuilder.hyperlink(this, item.clientInfo.authorUrl)
                     }.addClass(Style.GenericTrackAuthorLabel)
                 }
 

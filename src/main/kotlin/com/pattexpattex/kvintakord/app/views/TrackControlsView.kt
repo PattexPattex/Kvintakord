@@ -6,7 +6,6 @@ import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.audio.MixerManager
 import com.pattexpattex.kvintakord.music.player.PlayerManager
 import com.pattexpattex.kvintakord.music.player.QueueManager
-import com.pattexpattex.kvintakord.music.player.metadata
 import com.pattexpattex.kvintakord.music.player.toReadableTime
 import javafx.geometry.Pos
 import javafx.scene.image.Image
@@ -55,7 +54,7 @@ class TrackControlsView : View("TrackControls") {
                 hyperlink(playerManager.audioPlayer.playingTrackProperty.map {
                     when (it) {
                         null -> null
-                        else -> it.metadata?.name ?: "Untitled"
+                        else -> it.clientInfo.title
                     }
                 }) {
                     //hgrow = Priority.ALWAYS
@@ -64,23 +63,23 @@ class TrackControlsView : View("TrackControls") {
                     hiddenWhen { textProperty().isNull }
 
                     action {
-                        playerManager.audioPlayer.playingTrack?.metadata?.uri?.let { openUrl(it) }
+                        playerManager.audioPlayer.playingTrack?.clientInfo?.uri?.let { openUrl(it) }
                     }
 
-                    ContextMenuBuilder.hyperlink(this, playerManager.audioPlayer.playingTrackProperty.map { it.metadata?.uri })
+                    ContextMenuBuilder.hyperlink(this, playerManager.audioPlayer.playingTrackProperty.map { it.clientInfo.uri })
                 }.addClass(Style.GenericTrackNameLabel)
 
-                hyperlink(playerManager.audioPlayer.playingTrackProperty.map { it.metadata?.author }) {
+                hyperlink(playerManager.audioPlayer.playingTrackProperty.map { it.clientInfo.author }) {
                     maxWidth = Region.USE_PREF_SIZE
                     //hgrow = Priority.ALWAYS
 
                     hiddenWhen { textProperty().isNull }
 
                     action {
-                        playerManager.audioPlayer.playingTrack?.metadata?.authorUrl?.let { openUrl(it) }
+                        playerManager.audioPlayer.playingTrack?.clientInfo?.authorUrl?.let { openUrl(it) }
                     }
 
-                    ContextMenuBuilder.hyperlink(this, playerManager.audioPlayer.playingTrackProperty.map { it.metadata?.authorUrl })
+                    ContextMenuBuilder.hyperlink(this, playerManager.audioPlayer.playingTrackProperty.map { it.clientInfo.authorUrl })
                 }.addClass(Style.GenericTrackAuthorLabel)
 
                 // TODO

@@ -2,14 +2,9 @@ package com.pattexpattex.kvintakord.music.player
 
 import com.adamratzman.spotify.SpotifyRestAction
 import com.pattexpattex.kvintakord.music.player.Executors.spotifySearchExecutor
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory
 import java.util.concurrent.*
 import java.util.concurrent.Executors
-
-inline fun <reified T> AudioTrack.getUserData(): T? = getUserData(T::class.java)
-
-val AudioTrack.metadata get() = getUserData<TrackMetadata>()
 
 fun toReadableTime(ms: Number) = when (ms) {
     Long.MAX_VALUE, -1L -> "--:--:--"
