@@ -4,10 +4,7 @@ import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.fragments.ContextMenuBuilder
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.audio.AudioDispatcher
-import com.pattexpattex.kvintakord.music.player.Executors
-import com.pattexpattex.kvintakord.music.player.PlayerManager
-import com.pattexpattex.kvintakord.music.player.metadata
-import com.pattexpattex.kvintakord.music.player.toReadableTime
+import com.pattexpattex.kvintakord.music.player.*
 import javafx.geometry.Pos
 import javafx.scene.image.Image
 import javafx.scene.layout.Priority
@@ -19,6 +16,7 @@ class TrackControlsView : View("TrackControls") {
     private val player = find<PlayerManager>()
     private val mixer = stringProperty()
     private val mixers = listProperty(arrayListOf<String>().asObservable())
+    private val queueManager by inject<QueueManager>()
 
     init {
         player.audioDispatcher.addListener(::updateMixers)
@@ -169,9 +167,9 @@ class TrackControlsView : View("TrackControls") {
 
                 button { //Shuffle
 
-                    textProperty().bind(player.queueManager.shuffleProperty.map { it.emoji })
+                    textProperty().bind(queueManager.shuffleProperty.map { it.emoji })
                     action {
-                        player.queueManager.shuffle++
+                        queueManager.shuffle++
                     }
                 }.addClass(Style.TrackControlButton)
 
@@ -191,15 +189,15 @@ class TrackControlsView : View("TrackControls") {
 
                 button("⏭") { //Skip
                     action {
-                        player.queueManager.skipTrack()
+                        queueManager.skipTrack()
                     }
                 }.addClass(Style.TrackControlButton)
 
                 button { //Loop
-                    textProperty().bind(player.queueManager.loopProperty.map { it.emoji })
+                    textProperty().bind(queueManager.loopProperty.map { it.emoji })
 
                     action {
-                        player.queueManager.loop++
+                        queueManager.loop++
                     }
                 }.addClass(Style.TrackControlButton)
             }

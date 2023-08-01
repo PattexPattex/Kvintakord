@@ -11,8 +11,8 @@ import javafx.scene.layout.Priority
 import tornadofx.*
 
 class SearchView : View() {
-    val player = find<PlayerManager>()
-    private val searchManager = find<SearchManager>()
+    val player by inject<PlayerManager>()
+    private val searchManager by inject<SearchManager>()
 
     override val root = borderpane {
         top = vbox {
@@ -85,7 +85,7 @@ class SearchView : View() {
 
     /*private fun handleSearchException(throwable: Throwable) {
         if (throwable is NullPointerException) {
-            val apiManager = find<SpotifyApiManager>()
+            val apiManager by inject<SpotifyApiManager>()
             val showSpotifyAuth = resultsSource.value == "Spotify" && !apiManager.areCredentialsValid()
 
             alert(

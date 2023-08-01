@@ -3,7 +3,7 @@ package com.pattexpattex.kvintakord.app.fragments
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.adapter.AudioTrackAdapter
-import com.pattexpattex.kvintakord.music.player.PlayerManager
+import com.pattexpattex.kvintakord.music.player.QueueManager
 import javafx.beans.value.ObservableValue
 import javafx.event.EventTarget
 import javafx.scene.control.Hyperlink
@@ -54,12 +54,12 @@ object ContextMenuBuilder {
         target.contextmenu {
             item("Play now") {
                 action {
-                    player.queueManager.skipTrack(player.queueManager.queue.indexOf(track))
+                    queueManager.skipTrack(queueManager.queue.indexOf(track))
                 }
             }
             item("Remove") {
                 action {
-                    player.queueManager.removeFromQueue(track)
+                    queueManager.removeFromQueue(track)
                 }
             }
         }.style {
@@ -73,16 +73,16 @@ object ContextMenuBuilder {
         target.contextmenu {
             item("Play now") {
                 action {
-                    player.queueManager.playNow(track)
+                    queueManager.playNow(track)
                 }
             }
             item("Add to queue") {
                 action {
-                    player.queueManager.addToQueue(track)
+                    queueManager.addToQueue(track)
                 }
             }
         }
     }
 
-    private val player get() = find<PlayerManager>()
+    private val queueManager get() = find<QueueManager>()
 }

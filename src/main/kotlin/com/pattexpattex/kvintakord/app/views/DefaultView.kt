@@ -6,7 +6,7 @@ import com.pattexpattex.kvintakord.music.player.metadata
 import tornadofx.*
 
 class DefaultView : View() {
-    val player = find<PlayerManager>()
+    val player by inject<PlayerManager>()
 
     init {
         titleProperty.bind(player.audioPlayer.playingTrackProperty.map { when (it) {

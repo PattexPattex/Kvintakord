@@ -12,7 +12,7 @@ import tornadofx.*
 import java.util.regex.Pattern
 
 class SearchManager : Controller() {
-	private val playerManager = find<PlayerManager>()
+	private val playerManager by inject<PlayerManager>()
 
 	var inputField by singleAssign<TextField>()
 	var sourceToggleGroup by singleAssign<ToggleGroup>()

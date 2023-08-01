@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 
 class PlayerManager : Controller() {
     val audioPlayerManager = DefaultAudioPlayerManager()
-    val queueManager = QueueManager(this)
+    private val queueManager by inject<QueueManager>()
 
     init {
         audioPlayerManager.registerSourceManager(SpotifyAudioSourceManager(find<SpotifyApiManager>(), YoutubeAudioSourceManager()))
@@ -31,11 +31,12 @@ class PlayerManager : Controller() {
 
     init {
         loadConfiguration()
-        audioPlayer.addListener(queueManager)
         audioDispatcher.addListener { saveConfiguration("mixer", it.getMixer()?.mixerInfo?.name) }
         Executors.scheduledExecutor.scheduleAtFixedRate({
             runLater { audioPlayer.playingTrack?.updatePosition() }
         }, 0, 1000, TimeUnit.MILLISECONDS)
+
+        audioPlayer.addListener(queueManager.getListener())
     }
 
     private fun loadConfiguration() {

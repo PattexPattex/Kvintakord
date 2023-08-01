@@ -4,7 +4,7 @@ import com.pattexpattex.kvintakord.app.LimitedHashSet
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.adapter.AudioTrackAdapter
-import com.pattexpattex.kvintakord.music.player.PlayerManager
+import com.pattexpattex.kvintakord.music.player.QueueManager
 import com.pattexpattex.kvintakord.music.player.metadata
 import com.pattexpattex.kvintakord.music.player.toReadableTime
 import javafx.geometry.Pos
@@ -16,7 +16,7 @@ import javafx.scene.input.TransferMode
 import tornadofx.*
 
 class AudioTrackCell : ListCell<AudioTrackAdapter>() {
-    private val player = find<PlayerManager>()
+    private val queueManager = find<QueueManager>()
 
     init {
         addClass(Style.TrackCell)
@@ -70,7 +70,7 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
                 val draggedIndex = items.indexOfFirst { it.identifier == dragboard.string }
                 val thisIndex = items.indexOf(item)
 
-                find<PlayerManager>().queueManager.moveTrack(draggedIndex, thisIndex)
+                queueManager.moveTrack(draggedIndex, thisIndex)
                 success = true
             }
 
@@ -141,9 +141,9 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
                     button("▶") {
                         action {
                             if (isSearch()) {
-                                player.queueManager.playNow(item)
+                                queueManager.playNow(item)
                             } else {
-                                player.queueManager.skipTrack(listView.items.indexOf(item))
+                                queueManager.skipTrack(listView.items.indexOf(item))
                             }
                         }
 
@@ -154,7 +154,7 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
 
                     button("❌") {
                         action {
-                            player.queueManager.removeFromQueue(item)
+                            queueManager.removeFromQueue(item)
                         }
 
                         if (!isQueued()) {
@@ -165,7 +165,7 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
 
                     button("➕") {
                         action {
-                            player.queueManager.addToQueue(item)
+                            queueManager.addToQueue(item)
                         }
 
                         if (!isSearch()) {

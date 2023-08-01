@@ -11,7 +11,8 @@ import tornadofx.*
 import java.security.SecureRandom
 import java.util.concurrent.LinkedBlockingDeque
 
-class QueueManager(private val playerManager: PlayerManager) : AudioEventAdapter() {
+class QueueManager : Controller() {
+	private val playerManager by inject<PlayerManager>()
 	private val lock = Any()
 
 	val loopProperty = objectProperty<LoopMode>()
@@ -23,6 +24,8 @@ class QueueManager(private val playerManager: PlayerManager) : AudioEventAdapter
 	private val actualQueue = LinkedBlockingDeque<AudioTrackAdapter>()
 	private val _queue = observableListOf<AudioTrackAdapter>()
 	val queue = _queue.asUnmodifiable()
+
+	fun getListener(): AudioEventAdapter = EventListener()
 
 	fun addToQueue(audioTrack: AudioTrackAdapter) {
 		addTrack(audioTrack)
@@ -146,37 +149,51 @@ class QueueManager(private val playerManager: PlayerManager) : AudioEventAdapter
 		}
 	}
 
-	override fun onTrackStart(player: AudioPlayer?, track: AudioTrack?) {
-		updatePublicQueue()
-	}
-
-	@Volatile private var retried = false
-
-	override fun onTrackEnd(player: AudioPlayer, track: AudioTrack, endReason: AudioTrackEndReason) {
-		if (endReason == AudioTrackEndReason.LOAD_FAILED && !retried) {
-			retried = true
-			addToQueueFirst(AudioTrackAdapter.clone(track))
-			return
-		} else {
-			retried = false
+	private inner class EventListener : AudioEventAdapter() {
+		override fun onTrackStart(player: AudioPlayer?, track: AudioTrack?) {
+			updatePublicQueue()
 		}
 
-		if (endReason.mayStartNext) {
-			when (loop) {
-				LoopMode.SINGLE -> addToQueueFirst(AudioTrackAdapter.clone(track))
-				LoopMode.ALL -> addToQueue(AudioTrackAdapter.clone(track))
-				else -> nextTrack(true)
+		@Volatile private var retried = false
+		@Volatile private var exception = false
+
+		override fun onTrackEnd(player: AudioPlayer, track: AudioTrack, endReason: AudioTrackEndReason) {
+			if (endReason == AudioTrackEndReason.LOAD_FAILED && !retried) {
+				retried = true
+				addToQueueFirst(AudioTrackAdapter.clone(track))
+				return
+			} else {
+				retried = false
 			}
+
+			if (exception) {
+				runCatching { Thread.sleep(2000) }
+				exception = false
+			}
+
+			if (endReason.mayStartNext) {
+				when (loop) {
+					LoopMode.SINGLE -> addToQueueFirst(AudioTrackAdapter.clone(track))
+					LoopMode.ALL -> addToQueue(AudioTrackAdapter.clone(track))
+					else -> nextTrack(true)
+				}
+			}
+
+			updatePublicQueue()
 		}
 
-		updatePublicQueue()
-	}
+		override fun onTrackException(player: AudioPlayer?, track: AudioTrack?, exception: FriendlyException?) {
+			this.exception = true
+			updatePublicQueue() //TODO error handling
+		}
 
-	override fun onTrackException(player: AudioPlayer?, track: AudioTrack?, exception: FriendlyException?) {
-		updatePublicQueue() //TODO error handling
-	}
-
-	override fun onTrackStuck(player: AudioPlayer?, track: AudioTrack?, thresholdMs: Long, stackTrace: Array<StackTraceElement>) {
-		nextTrack(false) // TODO error handling
+		override fun onTrackStuck(
+			player: AudioPlayer?,
+			track: AudioTrack?,
+			thresholdMs: Long,
+			stackTrace: Array<StackTraceElement>
+		) {
+			nextTrack(false) // TODO error handling
+		}
 	}
 }
