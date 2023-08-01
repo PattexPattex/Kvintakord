@@ -1,5 +1,7 @@
 package com.pattexpattex.kvintakord.music.audio
 
+import com.pattexpattex.kvintakord.music.player.PlayerManager
+import com.sedmelluq.discord.lavaplayer.format.AudioDataFormatTools
 import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.collections.ObservableList
@@ -8,7 +10,7 @@ import tornadofx.*
 import javax.sound.sampled.*
 
 class MixerManager : Controller() {
-    private var format by singleAssign<AudioFormat>()
+    private val format = AudioDataFormatTools.toAudioFormat(PlayerManager.OUTPUT_FORMAT)
 
     val availableMixers: ObservableList<String> = MixerList(getAvailableMixers().map { it.mixerInfo.name })
 
@@ -20,6 +22,8 @@ class MixerManager : Controller() {
     val line: SourceDataLine? by _lineProperty
 
     init {
+        setMixer(mixer)
+
         mixerProperty.onChange {
             setMixer(it)
             config["mixer"] = it
@@ -27,12 +31,6 @@ class MixerManager : Controller() {
         }
 
         createUpdateCheckerThread().start()
-    }
-
-
-    fun setup(format: AudioFormat) {
-        this.format = format
-        setMixer(mixer)
     }
 
     fun useFallback() {

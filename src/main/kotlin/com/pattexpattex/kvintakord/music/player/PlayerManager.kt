@@ -24,19 +24,17 @@ class PlayerManager : Controller() {
         audioPlayerManager.registerSourceManager(SpotifyAudioSourceManager(find<SpotifyApiManager>(), YoutubeAudioSourceManager()))
         AudioSourceManagers.registerRemoteSources(audioPlayerManager)
         AudioSourceManagers.registerLocalSource(audioPlayerManager)
-        audioPlayerManager.configuration.outputFormat = StandardAudioDataFormats.COMMON_PCM_S16_BE
+        audioPlayerManager.configuration.outputFormat = OUTPUT_FORMAT
     }
 
     val audioPlayer = AudioPlayerAdapter.wrap(audioPlayerManager.createPlayer())
     private val format = audioPlayerManager.configuration.outputFormat
     private val stream = AudioPlayerInputStream.createStream(audioPlayer, format, 0, true)
-    val audioDispatcher: AudioDispatcher
+    private val audioDispatcher: AudioDispatcher = AudioDispatcher(mixerManager, stream)
 
     init {
-        loadConfiguration()
-
-        mixerManager.setup(stream.format)
-        audioDispatcher = AudioDispatcher(mixerManager, stream)
+        loadSavedState()
+        registerStateListeners()
 
         Executors.scheduledExecutor.scheduleAtFixedRate({
             runLater { audioPlayer.playingTrack?.updatePosition() }
@@ -45,14 +43,16 @@ class PlayerManager : Controller() {
         audioPlayer.addListener(queueManager.getListener())
     }
 
-    private fun loadConfiguration() {
+    private fun loadSavedState() {
         with(config) {
             audioPlayer.volume = int("vol", 100)
             audioPlayer.isPaused = boolean("pause", false)
             queueManager.loop = LoopMode.fromString(string("loop", "off"))
             queueManager.shuffle = ShuffleMode.fromBoolean(boolean("shuffle", false))
         }
+    }
 
+    private fun registerStateListeners() {
         audioPlayer.volumeProperty.onChange { save("vol", it) }
         audioPlayer.isPausedProperty.onChange { save("pause", it) }
         queueManager.loopProperty.onChange { save("loop", it) }
@@ -66,36 +66,6 @@ class PlayerManager : Controller() {
         }
     }
 
-    /*fun search(query: String, source: String? = null): CompletableFuture<Pair<String, List<AudioTrackAdapter>>> {
-        val future = CompletableFuture<Pair<String, List<AudioTrackAdapter>>>()
-        val formattedQuery = formatQuery(query, source)
-
-        if (formattedQuery.isEmpty()) {
-            future.completeExceptionally(IllegalArgumentException())
-            return future
-        }
-
-        audioPlayerManager.loadItem(formattedQuery, object : AudioLoadResultHandler {
-            override fun trackLoaded(track: AudioTrack) {
-                future.complete(query to listOf(AudioTrackAdapter.wrap(TrackMetadata.buildFor(track))!!))
-            }
-
-            override fun playlistLoaded(playlist: AudioPlaylist) {
-                future.complete(playlist.name to playlist.tracks.map(TrackMetadata::buildFor).mapNotNull(AudioTrackAdapter::wrap))
-            }
-
-            override fun noMatches() {
-                future.completeExceptionally(NullPointerException("No results for $query"))
-            }
-
-            override fun loadFailed(exception: FriendlyException) {
-                future.completeExceptionally(exception)
-            }
-        })
-
-        return future
-    }*/
-
     fun togglePaused(): Boolean {
         audioPlayer.isPaused = !audioPlayer.isPaused
         return audioPlayer.isPaused
@@ -104,12 +74,15 @@ class PlayerManager : Controller() {
     fun stop() {
         audioPlayer.stopTrack()
         queueManager.stop()
-        //dispatcher.stop()
         audioPlayer.isPaused = true
     }
 
-    fun close() {
+    fun destroy() {
         audioPlayer.destroy()
         audioDispatcher.destroy()
+    }
+
+    companion object {
+        val OUTPUT_FORMAT = StandardAudioDataFormats.COMMON_PCM_S16_BE
     }
 }
