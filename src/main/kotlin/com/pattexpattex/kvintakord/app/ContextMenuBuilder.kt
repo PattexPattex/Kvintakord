@@ -1,7 +1,5 @@
-package com.pattexpattex.kvintakord.app.fragments
+package com.pattexpattex.kvintakord.app
 
-import com.pattexpattex.kvintakord.app.Style
-import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.adapter.AudioTrackAdapter
 import com.pattexpattex.kvintakord.music.player.QueueManager
 import javafx.beans.value.ObservableValue
@@ -9,7 +7,6 @@ import javafx.event.EventTarget
 import javafx.scene.control.Hyperlink
 import javafx.scene.input.Clipboard
 import tornadofx.*
-
 
 object ContextMenuBuilder {
     fun hyperlink(hyperlink: Hyperlink, uri: String?) {
@@ -54,7 +51,7 @@ object ContextMenuBuilder {
         target.contextmenu {
             item("Play now") {
                 action {
-                    queueManager.skipTrack(queueManager.queue.indexOf(track))
+                    queueManager.skipToTrack(queueManager.queue.indexOf(track))
                 }
             }
             item("Remove") {

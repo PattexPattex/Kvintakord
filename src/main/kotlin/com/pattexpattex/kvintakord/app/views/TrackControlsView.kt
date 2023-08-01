@@ -1,8 +1,8 @@
 package com.pattexpattex.kvintakord.app.views
 
+import com.pattexpattex.kvintakord.app.ContextMenuBuilder
 import com.pattexpattex.kvintakord.app.ImageCache
 import com.pattexpattex.kvintakord.app.Style
-import com.pattexpattex.kvintakord.app.fragments.ContextMenuBuilder
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.audio.MixerManager
 import com.pattexpattex.kvintakord.music.player.PlayerManager

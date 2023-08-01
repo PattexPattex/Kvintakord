@@ -1,6 +1,7 @@
-package com.pattexpattex.kvintakord.app.fragments
+package com.pattexpattex.kvintakord.app.cell.track
 
-import com.pattexpattex.kvintakord.app.LimitedHashSet
+import com.pattexpattex.kvintakord.app.ContextMenuBuilder
+import com.pattexpattex.kvintakord.app.ImageCache
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.openUrl
 import com.pattexpattex.kvintakord.music.adapter.AudioTrackAdapter
@@ -10,7 +11,6 @@ import com.pattexpattex.kvintakord.music.player.toReadableTime
 import javafx.geometry.Pos
 import javafx.scene.control.ContentDisplay
 import javafx.scene.control.ListCell
-import javafx.scene.image.Image
 import javafx.scene.input.ClipboardContent
 import javafx.scene.input.TransferMode
 import tornadofx.*
@@ -32,7 +32,7 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
             val clipboard = ClipboardContent()
             clipboard.putString(item.identifier)
 
-            getImage(item.metadata?.image)?.let { dragboard.dragView = it }
+            dragboard.dragView = ImageCache.getImage(item.metadata?.image)
             dragboard.setContent(clipboard)
             event.consume()
         }
@@ -109,7 +109,9 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
                         }
                     }
 
-                    getImage(item.metadata?.image)?.let { imageview(it) }
+                    imageview {
+                        image = ImageCache.getImage(item.metadata?.image)
+                    }
                     paddingRight = 5
                 }
 
@@ -143,7 +145,7 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
                             if (isSearch()) {
                                 queueManager.playNow(item)
                             } else {
-                                queueManager.skipTrack(listView.items.indexOf(item))
+                                queueManager.skipToTrack(listView.items.indexOf(item))
                             }
                         }
 
@@ -184,18 +186,4 @@ class AudioTrackCell : ListCell<AudioTrackAdapter>() {
     private fun isCurrent() = hasClass(Style.CurrentTrackCell)
     private fun isQueued() = hasClass(Style.QueuedTrackCell)
     private fun isSearch() = hasClass(Style.SearchTrackCell)
-
-    companion object {
-        private val cachedImages = LimitedHashSet<Image>(20)
-
-        private fun getImage(url: String?): Image? {
-            if (url == null) {
-                return null
-            }
-
-            return cachedImages.find { it.url == url }
-                ?: Image(url, .0, 40.0, true, true, false)
-                    .also { cachedImages.add(it) }
-        }
-    }
 }

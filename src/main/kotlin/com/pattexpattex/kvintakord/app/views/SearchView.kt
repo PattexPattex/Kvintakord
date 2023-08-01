@@ -1,7 +1,7 @@
 package com.pattexpattex.kvintakord.app.views
 
 import com.pattexpattex.kvintakord.app.Style
-import com.pattexpattex.kvintakord.app.fragments.AudioTrackCell
+import com.pattexpattex.kvintakord.app.cell.track.AudioTrackCell
 import com.pattexpattex.kvintakord.music.player.PlayerManager
 import com.pattexpattex.kvintakord.music.player.SearchManager
 import com.pattexpattex.kvintakord.music.spotify.SpotifyApiManager

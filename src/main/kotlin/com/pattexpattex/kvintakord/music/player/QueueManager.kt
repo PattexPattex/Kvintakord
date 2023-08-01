@@ -66,23 +66,27 @@ class QueueManager : Controller() {
 		nextTrack(false)
 	}
 
-	fun skipTrack(pos: Int) {
+	fun skipToTrack(pos: Int, ignoreLoop: Boolean = false) {
 		if (pos !in 0 until _queue.size) {
 			return
 		}
 
 		if (pos == 0) {
-			return skipTrack()
+			return skipTrack(ignoreLoop)
 		}
 
-		if (loop == LoopMode.ALL) {
-			playerManager.audioPlayer.playingTrack?.let { addTrack(AudioTrackAdapter.clone(it)) }
+		if (!ignoreLoop && loop == LoopMode.ALL) {
+			playerManager.audioPlayer.playingTrack?.let { addTrack(ensureNotDuplicate(it)) }
 			addTracks(drainQueue(pos))
 		} else {
 			drainQueue(pos)
 		}
 
 		nextTrack(false)
+	}
+
+	fun skipToTrack(trackAdapter: AudioTrackAdapter, ignoreLoop: Boolean = false) {
+		skipToTrack(actualQueue.indexOf(trackAdapter), ignoreLoop)
 	}
 
 	fun moveTrack(from: Int, to: Int) {
