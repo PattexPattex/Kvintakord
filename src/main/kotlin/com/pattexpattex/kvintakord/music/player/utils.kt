@@ -1,11 +1,11 @@
 package com.pattexpattex.kvintakord.music.player
 
 import com.adamratzman.spotify.SpotifyRestAction
+import com.pattexpattex.kvintakord.music.player.Executors.spotifySearchExecutor
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.lava.common.tools.DaemonThreadFactory
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.*
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 inline fun <reified T> AudioTrack.getUserData(): T? = getUserData(T::class.java)
 
@@ -23,8 +23,8 @@ fun toReadableTime(ms: Number) = when (ms) {
 fun Number?.toReadableTime() = toReadableTime(this ?: -1)
 
 object Executors {
-    val scheduledExecutor = Executors.newScheduledThreadPool(1, DaemonThreadFactory("util"))
-    val spotifySearchExecutor = Executors.newCachedThreadPool(DaemonThreadFactory("spotify-search"))
+    val scheduledExecutor: ScheduledExecutorService = Executors.newScheduledThreadPool(10, DaemonThreadFactory("util"))
+    val spotifySearchExecutor: ExecutorService = Executors.newCachedThreadPool(DaemonThreadFactory("spotify-search"))
 
     fun stopAll() {
         scheduledExecutor.shutdown()
@@ -33,4 +33,4 @@ object Executors {
 }
 
 fun <T> SpotifyRestAction<T>.toCompletableFuture(): CompletableFuture<T> =
-    CompletableFuture.supplyAsync(::complete, com.pattexpattex.kvintakord.music.player.Executors.spotifySearchExecutor)
+    CompletableFuture.supplyAsync(::complete, spotifySearchExecutor)
