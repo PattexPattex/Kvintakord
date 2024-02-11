@@ -30,14 +30,14 @@ dependencies {
     implementation("com.vdurmont:emoji-java:5.1.1")
     implementation("com.dustinredmond.fxtrayicon:FXTrayIcon:4.0.1")
     implementation("org.slf4j:jul-to-slf4j:2.0.9")
-    runtimeOnly("ch.qos.logback:logback-classic:1.4.11")
-    runtimeOnly("org.fusesource.jansi:jansi:2.4.0")
+    runtimeOnly("ch.qos.logback:logback-classic:1.4.14")
+    runtimeOnly("org.fusesource.jansi:jansi:2.4.1")
 
     //Fix vulnerabilities
     runtimeOnly("com.fasterxml.jackson.core:jackson-databind:2.15.2")
     runtimeOnly("commons-codec:commons-codec:1.16.0")
     runtimeOnly("org.apache.httpcomponents:httpclient:4.5.14")
-    runtimeOnly("org.json:json:20230618")
+    runtimeOnly("org.json:json:20240205")
 
     runtimeOnly("org.openjfx:javafx-graphics:${javafx.version}:win")
     runtimeOnly("org.openjfx:javafx-graphics:${javafx.version}:linux")
