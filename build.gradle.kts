@@ -25,7 +25,7 @@ javafx {
 
 dependencies {
     implementation("com.github.edvin:tornadofx2:master-SNAPSHOT")
-    implementation("dev.arbjerg:lavaplayer:2.0.1")
+    implementation("dev.arbjerg:lavaplayer:2.1.1")
     implementation("com.adamratzman:spotify-api-kotlin-core:4.0.2")
     implementation("com.vdurmont:emoji-java:5.1.1")
     implementation("com.dustinredmond.fxtrayicon:FXTrayIcon:4.0.1")
