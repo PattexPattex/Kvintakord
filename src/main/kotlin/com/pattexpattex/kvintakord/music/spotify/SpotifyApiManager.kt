@@ -7,7 +7,6 @@ import com.pattexpattex.kvintakord.app.SLF4J
 import javafx.stage.Modality
 import javafx.stage.StageStyle
 import tornadofx.*
-import java.lang.IllegalArgumentException
 import java.util.concurrent.RejectedExecutionException
 import java.util.regex.Pattern
 

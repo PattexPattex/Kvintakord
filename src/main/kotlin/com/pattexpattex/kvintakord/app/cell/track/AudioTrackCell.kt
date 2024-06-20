@@ -1,24 +1,31 @@
-package com.pattexpattex.kvintakord.app.fragments
+package com.pattexpattex.kvintakord.app.cell.track
 
-import com.pattexpattex.kvintakord.app.LimitedHashSet
+import com.pattexpattex.kvintakord.app.ContextMenuBuilder
+import com.pattexpattex.kvintakord.app.ImageCache
 import com.pattexpattex.kvintakord.app.Style
 import com.pattexpattex.kvintakord.app.openUrl
-import com.pattexpattex.kvintakord.music.player.PlayerManager
-import com.pattexpattex.kvintakord.music.player.metadata
+import com.pattexpattex.kvintakord.music.adapter.AudioTrackAdapter
+import com.pattexpattex.kvintakord.music.player.QueueManager
 import com.pattexpattex.kvintakord.music.player.toReadableTime
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import javafx.geometry.Pos
 import javafx.scene.control.ContentDisplay
 import javafx.scene.control.ListCell
-import javafx.scene.image.Image
 import javafx.scene.input.ClipboardContent
 import javafx.scene.input.TransferMode
 import tornadofx.*
 
-class AudioTrackCell : ListCell<AudioTrack>() {
-    private val player = find<PlayerManager>()
+class AudioTrackCell : ListCell<AudioTrackAdapter>() {
+    private val queueManager = find<QueueManager>()
 
     init {
+        onDoubleClick {
+            if (isQueued()) {
+                item?.let(queueManager::skipToTrack)
+            } else if (isSearch()) {
+                item?.let(queueManager::addToQueue)
+            }
+        }
+
         addClass(Style.TrackCell)
         contentDisplay = ContentDisplay.CENTER
         alignment = Pos.CENTER
@@ -32,7 +39,7 @@ class AudioTrackCell : ListCell<AudioTrack>() {
             val clipboard = ClipboardContent()
             clipboard.putString(item.identifier)
 
-            getImage(item.metadata?.image)?.let { dragboard.dragView = it }
+            dragboard.dragView = ImageCache.getImage(item.clientInfo.imageUrl)
             dragboard.setContent(clipboard)
             event.consume()
         }
@@ -70,7 +77,7 @@ class AudioTrackCell : ListCell<AudioTrack>() {
                 val draggedIndex = items.indexOfFirst { it.identifier == dragboard.string }
                 val thisIndex = items.indexOf(item)
 
-                find<PlayerManager>().musicManager.moveTrack(draggedIndex, thisIndex)
+                queueManager.moveTrack(draggedIndex, thisIndex)
                 success = true
             }
 
@@ -81,7 +88,7 @@ class AudioTrackCell : ListCell<AudioTrack>() {
         setOnDragDone { it.consume() }
     }
 
-    override fun updateItem(item: AudioTrack?, empty: Boolean) {
+    override fun updateItem(item: AudioTrackAdapter?, empty: Boolean) {
         super.updateItem(item, empty)
 
         graphic = if (empty || item == null) {
@@ -109,28 +116,30 @@ class AudioTrackCell : ListCell<AudioTrack>() {
                         }
                     }
 
-                    getImage(item.metadata?.image)?.let { imageview(it) }
+                    imageview {
+                        image = ImageCache.getImage(item.clientInfo.imageUrl)
+                    }
                     paddingRight = 5
                 }
 
                 center = vbox {
                     alignment = Pos.CENTER_LEFT
                     prefWidth = 100.0
-                    hyperlink(item.metadata?.name ?: "Untitled") {
+                    hyperlink(item.clientInfo.title) {
                         paddingAll = 0
                         action {
-                            item.metadata?.uri?.let { openUrl(it) }
+                            openUrl(item.clientInfo.uri)
                         }
 
-                        ContextMenuBuilder.hyperlink(this, item.metadata?.uri)
+                        ContextMenuBuilder.hyperlink(this, item.clientInfo.uri)
                     }.addClass(Style.GenericTrackNameLabel)
-                    hyperlink(item.metadata?.author ?: "") {
+                    hyperlink(item.clientInfo.author) {
                         paddingAll = 0
                         action {
-                            item.metadata?.authorUrl?.let { openUrl(it) }
+                            openUrl(item.clientInfo.authorUrl)
                         }
 
-                        ContextMenuBuilder.hyperlink(this, item.metadata?.authorUrl)
+                        ContextMenuBuilder.hyperlink(this, item.clientInfo.authorUrl)
                     }.addClass(Style.GenericTrackAuthorLabel)
                 }
 
@@ -141,9 +150,9 @@ class AudioTrackCell : ListCell<AudioTrack>() {
                     button("▶") {
                         action {
                             if (isSearch()) {
-                                player.musicManager.playNow(item)
+                                queueManager.playNow(item)
                             } else {
-                                player.musicManager.skipTrack(listView.items.indexOf(item))
+                                queueManager.skipToTrack(listView.items.indexOf(item))
                             }
                         }
 
@@ -154,7 +163,7 @@ class AudioTrackCell : ListCell<AudioTrack>() {
 
                     button("❌") {
                         action {
-                            player.musicManager.removeFromQueue(item)
+                            queueManager.removeFromQueue(item)
                         }
 
                         if (!isQueued()) {
@@ -165,7 +174,7 @@ class AudioTrackCell : ListCell<AudioTrack>() {
 
                     button("➕") {
                         action {
-                            player.musicManager.addToQueue(item)
+                            queueManager.addToQueue(item)
                         }
 
                         if (!isSearch()) {
@@ -184,18 +193,4 @@ class AudioTrackCell : ListCell<AudioTrack>() {
     private fun isCurrent() = hasClass(Style.CurrentTrackCell)
     private fun isQueued() = hasClass(Style.QueuedTrackCell)
     private fun isSearch() = hasClass(Style.SearchTrackCell)
-
-    companion object {
-        private val cachedImages = LimitedHashSet<Image>(20)
-
-        private fun getImage(url: String?): Image? {
-            if (url == null) {
-                return null
-            }
-
-            return cachedImages.find { it.url == url }
-                ?: Image(url, .0, 40.0, true, true, false)
-                    .also { cachedImages.add(it) }
-        }
-    }
 }
